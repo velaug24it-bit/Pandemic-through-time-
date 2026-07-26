@@ -1,0 +1,247 @@
+/* ============================================================
+   Pandemic Through Time – Global Styles
+   Design system: dark space theme, holographic blue accents
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&family=Share+Tech+Mono&display=swap');
+
+@import "tailwindcss";
+
+/* ─── CSS Custom Properties ─── */
+:root {
+  /* Colors */
+  --col-bg:         #010409;
+  --col-surface:    #0d1117;
+  --col-border:     rgba(0, 200, 255, 0.15);
+  --col-blue:       #00c8ff;
+  --col-blue-dim:   #0077aa;
+  --col-blue-glow:  rgba(0, 200, 255, 0.3);
+  --col-accent:     #7b2ff7;
+  --col-success:    #00ff9d;
+  --col-warning:    #ffb700;
+  --col-danger:     #ff3860;
+  --col-text:       #e8f4fd;
+  --col-text-dim:   rgba(232, 244, 253, 0.55);
+
+  /* Typography */
+  --font-display:   'Orbitron', sans-serif;
+  --font-mono:      'Share Tech Mono', monospace;
+  --font-body:      'Inter', sans-serif;
+
+  /* Spacing scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+
+  /* Glass */
+  --glass-bg:       rgba(0, 10, 20, 0.6);
+  --glass-blur:     blur(16px);
+  --glass-border:   1px solid rgba(0, 200, 255, 0.18);
+
+  /* Animations */
+  --ease-out-expo:  cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-in-expo:   cubic-bezier(0.95, 0.05, 0.795, 0.035);
+}
+
+/* ─── Reset ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  background: var(--col-bg);
+  color: var(--col-text);
+  font-family: var(--font-body);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--col-blue-dim); border-radius: 2px; }
+
+/* ─── Typography ─── */
+.font-display { font-family: var(--font-display); }
+.font-mono    { font-family: var(--font-mono); }
+.font-body    { font-family: var(--font-body); }
+
+/* ─── Glass panels ─── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 12px;
+}
+
+.glass-strong {
+  background: rgba(0, 15, 30, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 200, 255, 0.25);
+  border-radius: 12px;
+}
+
+/* ─── Holographic text ─── */
+.holo-text {
+  background: linear-gradient(135deg, #00c8ff 0%, #7b2ff7 50%, #00ff9d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.holo-text-blue {
+  background: linear-gradient(135deg, #ffffff 0%, #00c8ff 60%, #0077ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Glow utilities ─── */
+.glow-blue  { text-shadow: 0 0 20px var(--col-blue-glow), 0 0 40px rgba(0,200,255,0.2); }
+.glow-green { text-shadow: 0 0 20px rgba(0,255,157,0.5); }
+.glow-box   { box-shadow: 0 0 20px var(--col-blue-glow), inset 0 0 20px rgba(0,200,255,0.05); }
+.glow-box-sm { box-shadow: 0 0 10px rgba(0,200,255,0.3); }
+
+/* ─── Scan-line overlay (cinematic) ─── */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Holographic border pulse ─── */
+@keyframes border-pulse {
+  0%, 100% { border-color: rgba(0, 200, 255, 0.18); }
+  50%       { border-color: rgba(0, 200, 255, 0.5); }
+}
+.border-pulse { animation: border-pulse 3s ease-in-out infinite; }
+
+/* ─── Animated gradient bg ─── */
+@keyframes nebula-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.nebula-bg {
+  background: linear-gradient(-45deg, #010409, #020c1b, #040d1f, #010409);
+  background-size: 400% 400%;
+  animation: nebula-shift 20s ease infinite;
+}
+
+/* ─── Data flicker ─── */
+@keyframes data-flicker {
+  0%, 100% { opacity: 1; }
+  92%       { opacity: 1; }
+  93%       { opacity: 0.4; }
+  94%       { opacity: 1; }
+  97%       { opacity: 0.6; }
+  98%       { opacity: 1; }
+}
+.data-flicker { animation: data-flicker 5s infinite; }
+
+/* ─── Loading progress bar ─── */
+@keyframes progress-glow {
+  0%   { box-shadow: 0 0 5px var(--col-blue), 0 0 10px var(--col-blue); }
+  50%  { box-shadow: 0 0 10px var(--col-blue), 0 0 20px var(--col-blue), 0 0 30px rgba(0,200,255,0.4); }
+  100% { box-shadow: 0 0 5px var(--col-blue), 0 0 10px var(--col-blue); }
+}
+.progress-glow { animation: progress-glow 1.5s ease-in-out infinite; }
+
+/* ─── Orbit ring ─── */
+@keyframes orbit-spin {
+  from { transform: rotateX(75deg) rotate(0deg); }
+  to   { transform: rotateX(75deg) rotate(360deg); }
+}
+.orbit-ring { animation: orbit-spin 8s linear infinite; }
+
+/* ─── Floating bob ─── */
+@keyframes float-bob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-12px); }
+}
+.float-bob { animation: float-bob 4s ease-in-out infinite; }
+
+/* ─── Ping pulse ─── */
+@keyframes ping-slow {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.ping-slow { animation: ping-slow 2.5s cubic-bezier(0,0,0.2,1) infinite; }
+
+/* ─── Canvas full coverage ─── */
+canvas { display: block; }
+
+/* ─── Responsive Mobile & Tablet Rules ─── */
+@media (max-width: 1024px) {
+  :root { font-size: 14px; }
+  
+  .responsive-dock {
+    max-width: 95vw !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.4rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  :root { font-size: 13px; }
+
+  /* Mobile touch optimization */
+  button, input, select {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile drawer full width bottom sheet */
+  .mobile-bottom-sheet {
+    top: auto !important;
+    bottom: 12px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: 94vw !important;
+    max-height: 75vh !important;
+  }
+
+  /* Hide decorative subtitle texts on mobile */
+  .mobile-hide {
+    display: none !important;
+  }
+
+  /* Compact button dock for mobile */
+  .mobile-scroll-dock {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    padding: 0.4rem !important;
+    width: 95vw !important;
+    scrollbar-width: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root { font-size: 12px; }
+}
