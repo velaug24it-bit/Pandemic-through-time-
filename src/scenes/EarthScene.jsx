@@ -16,6 +16,7 @@ import gsap from 'gsap';
 import * as THREE from 'three';
 
 import DigitalEarth       from '../components/earth/DigitalEarth';
+import GlobeInteractionLayer from '../components/earth/GlobeInteractionLayer';
 import CountryMarkers     from '../components/earth/CountryMarkers';
 import PandemicRoutes     from '../components/earth/PandemicRoutes';
 import OutbreakMarkers    from '../components/earth/OutbreakMarkers';
@@ -104,6 +105,7 @@ function EarthCanvasScene({
   const earthGroupRef    = useRef();
   const orbitRef         = useRef();
   const lastInteractTime = useRef(Date.now());
+  const [hoveredCountry, setHoveredCountry] = useState(null);
   const { camera }       = useThree();
 
   // Handle selectedCountry camera fly-to & focal lock
@@ -151,6 +153,16 @@ function EarthCanvasScene({
     }
   });
 
+  const handleCountryHover = useCallback((c) => {
+    setHoveredCountry(c);
+    onCountryHover?.(c);
+  }, [onCountryHover]);
+
+  const handleCountryClick = useCallback((c) => {
+    lastInteractTime.current = Date.now();
+    onCountryClick?.(c);
+  }, [onCountryClick]);
+
   return (
     <>
       <SunLight />
@@ -158,17 +170,25 @@ function EarthCanvasScene({
       <CameraRig orbitRef={orbitRef} />
 
       <Suspense fallback={<EarthFallback />}>
-        {/* Earth */}
+        {/* Earth Group with vector boundaries and surface raycaster */}
         <group ref={earthGroupRef}>
-          <DigitalEarth autoRotate={false} />
+          <DigitalEarth
+            autoRotate={false}
+            selectedCountry={selectedCountry}
+            hoveredCountry={hoveredCountry}
+          />
+
+          {/* 3D Surface Click & Touch Raycaster */}
+          <GlobeInteractionLayer
+            selectedCountry={selectedCountry}
+            onCountryHover={handleCountryHover}
+            onCountryClick={handleCountryClick}
+          />
 
           {/* Country markers (on the globe surface) */}
           <CountryMarkers
-            onCountryHover={onCountryHover}
-            onCountryClick={(c) => {
-              lastInteractTime.current = Date.now();
-              onCountryClick?.(c);
-            }}
+            onCountryHover={handleCountryHover}
+            onCountryClick={handleCountryClick}
           />
 
           {/* Outbreak hotspot rings */}
@@ -177,11 +197,11 @@ function EarthCanvasScene({
           {/* Pandemic routes (arcs) */}
           {showRoutes && <PandemicRoutes />}
 
-          {/* BioShield dome */}
+          {/* BioShield dome (optional toggle) */}
           {showShield && <BioshieldDome />}
         </group>
 
-        {/* Satellites + beams (not parented to Earth group → they orbit in world space) */}
+        {/* Satellites + beams */}
         <SatelliteNetwork showOrbits={showOrbits} />
         <CommBeams visible />
       </Suspense>

@@ -1,230 +1,210 @@
 /**
  * DigitalEarth.jsx
- * Phase 2 enhanced Earth — replaces the Phase 1 Earth in EarthScene.
+ * Realistic Vector Digital Twin Earth matching Image 1 and Image 2.
  * Features:
- *  - Ultra-quality procedural textures (day/night/cloud/specular)
- *  - Multi-layer atmosphere (inner + outer glow)
- *  - Auto-rotation toggle
- *  - OrbitControls with inertia
- *  - Continuous emission animation
- *  - Ocean specular shimmer
- *  - Polar ice caps
- *  - Accepts onCountryHover / onCountryClick callbacks (forwarded from CountryMarkers)
+ *  - Ultra-high-contrast dark space navy globe with realistic continent geometry
+ *  - Crisp neon cyan/blue vector country outlines matching Image 1
+ *  - Dynamic Country Polygonal Highlight: When a nation (e.g. India) is selected/hovered,
+ *    its exact boundary polygon is filled with glowing purple/violet (#c084fc / #a855f7) with neon edges (Image 2)
+ *  - Procedural atmospheric glow shader
  */
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { atmosphereVertexShader, atmosphereFragmentShader } from '../../utils/shaders';
+import { COUNTRY_POLYGONS } from '../../data/countryPolygons';
 
 const EARTH_R = 2;
 
-/* ── Procedural texture generators ──────────────────────────────────────── */
-
-function makeEarthTexture() {
-  const size = 1024;
+/**
+ * Generate high-resolution 2048x1024 vector equirectangular Earth texture
+ * with country borders and dynamic polygon highlighting.
+ */
+function createVectorEarthCanvas(selectedCountryId, hoveredCountryId) {
+  const width = 2048;
+  const height = 1024;
   const c = document.createElement('canvas');
-  c.width = c.height = size;
+  c.width = width;
+  c.height = height;
   const ctx = c.getContext('2d');
 
-  // Deep ocean base
-  const seaGrd = ctx.createLinearGradient(0, 0, size, size);
-  seaGrd.addColorStop(0,   '#0b2a4a');
-  seaGrd.addColorStop(0.5, '#0d3a6e');
-  seaGrd.addColorStop(1,   '#0a2440');
-  ctx.fillStyle = seaGrd;
-  ctx.fillRect(0, 0, size, size);
+  // 1. Deep Space Navy Ocean
+  const oceanGradient = ctx.createLinearGradient(0, 0, 0, height);
+  oceanGradient.addColorStop(0, '#020617');   // Polar dark
+  oceanGradient.addColorStop(0.2, '#040d21'); // Deep navy
+  oceanGradient.addColorStop(0.5, '#051329'); // Equatorial navy
+  oceanGradient.addColorStop(0.8, '#040d21');
+  oceanGradient.addColorStop(1, '#020617');
+  ctx.fillStyle = oceanGradient;
+  ctx.fillRect(0, 0, width, height);
 
-  // Continental masses (layered blobs)
-  const continents = [
+  // Subtle longitude & latitude grid lines
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+  ctx.lineWidth = 1;
+  for (let lat = -80; lat <= 80; lat += 20) {
+    const y = ((90 - lat) / 180) * height;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const x = ((lon + 180) / 360) * width;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+
+  // 2. Realistic Dark Landmass Base Shapes
+  const landmasses = [
     // North America
-    [0.12,0.27, 0.09], [0.17,0.29, 0.07], [0.22,0.25, 0.06], [0.10,0.32, 0.05],
-    [0.19,0.35, 0.05], [0.14,0.22, 0.06], [0.08,0.40, 0.05],
+    [
+      [-168, 65], [-140, 70], [-100, 72], [-60, 60], [-55, 45], [-65, 43],
+      [-75, 35], [-80, 25], [-97, 26], [-105, 20], [-90, 15], [-77, 8],
+      [-82, 9], [-95, 17], [-105, 22], [-117, 32], [-124, 48], [-140, 60],
+      [-165, 65]
+    ],
     // South America
-    [0.28,0.55, 0.07], [0.30,0.62, 0.06], [0.26,0.68, 0.05], [0.32,0.70, 0.04],
-    // Europe
-    [0.50,0.28, 0.05], [0.53,0.25, 0.04], [0.56,0.27, 0.04], [0.48,0.30, 0.04],
+    [
+      [-75, 12], [-60, 10], [-50, 0], [-35, -5], [-37, -13], [-41, -22],
+      [-53, -33], [-65, -55], [-75, -50], [-73, -40], [-70, -20], [-80, -4],
+      [-77, 8], [-75, 12]
+    ],
+    // Europe & Asia (Eurasia)
+    [
+      [-10, 36], [0, 44], [-4, 48], [8, 55], [12, 58], [25, 71], [40, 68],
+      [70, 73], [100, 77], [130, 74], [170, 67], [170, 60], [140, 50],
+      [130, 42], [120, 35], [122, 28], [108, 20], [105, 10], [100, 2],
+      [98, 10], [92, 22], [88, 22], [80, 10], [77, 8], [70, 22], [65, 25],
+      [60, 24], [55, 26], [45, 13], [35, 30], [26, 40], [15, 40], [0, 37],
+      [-10, 36]
+    ],
     // Africa
-    [0.52,0.38, 0.07], [0.54,0.45, 0.08], [0.52,0.52, 0.07], [0.56,0.58, 0.05],
-    [0.50,0.60, 0.05], [0.54,0.62, 0.04],
-    // Middle East
-    [0.58,0.33, 0.04], [0.61,0.35, 0.04],
-    // Central Asia
-    [0.63,0.28, 0.08], [0.68,0.25, 0.07], [0.72,0.27, 0.06],
-    // South Asia
-    [0.64,0.38, 0.05], [0.67,0.40, 0.04],
-    // Southeast Asia
-    [0.72,0.42, 0.04], [0.75,0.45, 0.03], [0.73,0.48, 0.03],
-    // East Asia
-    [0.76,0.30, 0.06], [0.79,0.27, 0.05], [0.82,0.32, 0.04],
-    // Japan
-    [0.85,0.28, 0.02],
+    [
+      [-17, 33], [10, 37], [32, 31], [43, 12], [51, 12], [40, -5], [35, -25],
+      [28, -34], [18, -34], [12, -15], [9, 4], [-15, 11], [-17, 33]
+    ],
     // Australia
-    [0.76,0.60, 0.07], [0.79,0.58, 0.06], [0.80,0.63, 0.05],
-    // Russia
-    [0.60,0.20, 0.12], [0.70,0.18, 0.10], [0.80,0.20, 0.09],
+    [
+      [114, -22], [128, -15], [136, -12], [142, -10], [153, -28], [150, -37],
+      [140, -38], [130, -32], [115, -34], [113, -26], [114, -22]
+    ]
   ];
 
-  continents.forEach(([x, y, r]) => {
-    const g = ctx.createRadialGradient(x*size, y*size, 0, x*size, y*size, r*size);
-    g.addColorStop(0,   '#3a7d2a');
-    g.addColorStop(0.4, '#2d6a1e');
-    g.addColorStop(0.8, '#1e5014');
-    g.addColorStop(1,   'transparent');
-    ctx.fillStyle = g;
+  ctx.fillStyle = '#0a1628'; // Dark high-tech landmass
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 1.5;
+
+  landmasses.forEach((poly) => {
     ctx.beginPath();
-    ctx.arc(x*size, y*size, r*size, 0, Math.PI*2);
+    poly.forEach(([lon, lat], i) => {
+      const x = ((lon + 180) / 360) * width;
+      const y = ((90 - lat) / 180) * height;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
     ctx.fill();
   });
 
-  // Desert patches (Sahara, Arabia, Central Asia, Australia)
-  const deserts = [
-    [0.52,0.33, 0.03, '#c8a060'], [0.58,0.36, 0.025,'#c0985a'],
-    [0.63,0.32, 0.02, '#b89050'], [0.79,0.60, 0.025,'#c4a865'],
-  ];
-  deserts.forEach(([x, y, r, col]) => {
-    const g = ctx.createRadialGradient(x*size, y*size, 0, x*size, y*size, r*size);
-    g.addColorStop(0, col);
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x*size, y*size, r*size, 0, Math.PI*2);
-    ctx.fill();
-  });
+  // 3. Render ALL Vector Country Boundaries (Image 1 style crisp cyan/blue neon outlines)
+  Object.keys(COUNTRY_POLYGONS).forEach((key) => {
+    const country = COUNTRY_POLYGONS[key];
+    const isSelected = selectedCountryId === country.id || selectedCountryId === country.name?.toLowerCase();
+    const isHovered = hoveredCountryId === country.id;
 
-  // Mountain ridges (darker green on continents)
-  ctx.globalAlpha = 0.3;
-  [[0.20,0.28,0.02],[0.26,0.60,0.015],[0.65,0.35,0.015],[0.78,0.30,0.02]].forEach(([x,y,r]) => {
-    ctx.fillStyle = '#1a3a0e';
-    ctx.beginPath();
-    ctx.arc(x*size, y*size, r*size, 0, Math.PI*2);
-    ctx.fill();
-  });
-  ctx.globalAlpha = 1;
-
-  // North polar ice cap
-  const northIce = ctx.createLinearGradient(0, 0, 0, size*0.10);
-  northIce.addColorStop(0,   'rgba(220,240,255,0.98)');
-  northIce.addColorStop(0.7, 'rgba(200,225,255,0.5)');
-  northIce.addColorStop(1,   'transparent');
-  ctx.fillStyle = northIce;
-  ctx.fillRect(0, 0, size, size*0.10);
-
-  // South polar ice cap (Antarctica)
-  const southIce = ctx.createLinearGradient(0, size*0.86, 0, size);
-  southIce.addColorStop(0,   'transparent');
-  southIce.addColorStop(0.3, 'rgba(220,240,255,0.5)');
-  southIce.addColorStop(1,   'rgba(230,245,255,0.98)');
-  ctx.fillStyle = southIce;
-  ctx.fillRect(0, size*0.86, size, size*0.14);
-
-  return new THREE.CanvasTexture(c);
-}
-
-function makeNightTexture() {
-  const size = 512;
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, size, size);
-
-  const hubs = [
-    // North America
-    [0.14,0.29], [0.17,0.28], [0.20,0.30], [0.22,0.32], [0.11,0.31], [0.16,0.34],
-    // Europe
-    [0.50,0.27], [0.52,0.25], [0.54,0.28], [0.57,0.25], [0.47,0.27],
-    // Russia
-    [0.60,0.20], [0.65,0.18], [0.70,0.19], [0.75,0.20],
-    // East Asia
-    [0.77,0.29], [0.80,0.27], [0.83,0.30], [0.85,0.27],
-    // South Asia
-    [0.64,0.36], [0.67,0.38],
-    // Africa
-    [0.52,0.36], [0.54,0.42],
-    // South America
-    [0.28,0.57], [0.30,0.64],
-    // Australia
-    [0.80,0.62], [0.77,0.60],
-  ];
-
-  hubs.forEach(([x, y]) => {
-    for (let i = 0; i < 20; i++) {
-      const ox = (Math.random()-0.5)*0.05;
-      const oy = (Math.random()-0.5)*0.03;
-      const r  = Math.random()*5 + 2;
-      const g  = ctx.createRadialGradient(
-        (x+ox)*size, (y+oy)*size, 0,
-        (x+ox)*size, (y+oy)*size, r
-      );
-      const intensity = 0.6 + Math.random()*0.4;
-      g.addColorStop(0, `rgba(255,220,140,${intensity})`);
-      g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g;
+    if (country.polygon && country.polygon.length > 2) {
       ctx.beginPath();
-      ctx.arc((x+ox)*size, (y+oy)*size, r, 0, Math.PI*2);
-      ctx.fill();
+      country.polygon.forEach(([lon, lat], i) => {
+        const x = ((lon + 180) / 360) * width;
+        const y = ((90 - lat) / 180) * height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+
+      // IF SELECTED (like India in Image 2) -> FILL WITH GLOWING VIOLET/PURPLE
+      if (isSelected || isHovered) {
+        // Glowing purple fill
+        ctx.fillStyle = isSelected ? 'rgba(192, 132, 252, 0.75)' : 'rgba(168, 85, 247, 0.45)';
+        ctx.shadowColor = '#c084fc';
+        ctx.shadowBlur = isSelected ? 25 : 12;
+        ctx.fill();
+
+        // Bright neon purple border
+        ctx.strokeStyle = '#f3e8ff';
+        ctx.lineWidth = isSelected ? 3.5 : 2.5;
+        ctx.stroke();
+
+        ctx.shadowBlur = 0; // reset
+      } else {
+        // Normal country border (cyan/blue neon outline like Image 1)
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
     }
   });
-  return new THREE.CanvasTexture(c);
-}
 
-function makeCloudTexture() {
-  const size = 512;
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, size, size);
+  // 4. Subtle City Night Lights
+  const cityClusters = [
+    [77.2, 28.6], [72.8, 19.0], [88.3, 22.5], [80.2, 13.0], // India
+    [-74.0, 40.7], [-118.2, 34.0], [-87.6, 41.8], [-95.3, 29.7], // USA
+    [116.4, 39.9], [121.4, 31.2], [113.2, 23.1], // China
+    [-0.1, 51.5], [2.3, 48.8], [13.4, 52.5], [12.5, 41.9], // Europe
+    [139.7, 35.6], [126.9, 37.5], // Tokyo, Seoul
+    [-46.6, -23.5], [-43.1, -22.9], // Brazil
+    [151.2, -33.8], [144.9, -37.8], // Australia
+    [31.2, 30.0], [28.0, -26.2], // Cairo, Jo'burg
+  ];
 
-  for (let i = 0; i < 140; i++) {
-    const x = Math.random()*size;
-    const y = Math.random()*size;
-    const r = Math.random()*40 + 8;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    const op = 0.3 + Math.random()*0.25;
-    g.addColorStop(0, `rgba(255,255,255,${op})`);
+  cityClusters.forEach(([lon, lat]) => {
+    const x = ((lon + 180) / 360) * width;
+    const y = ((90 - lat) / 180) * height;
+
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 8);
+    g.addColorStop(0, 'rgba(255, 235, 150, 0.9)');
+    g.addColorStop(0.4, 'rgba(56, 189, 248, 0.5)');
     g.addColorStop(1, 'transparent');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
     ctx.fill();
-  }
-  return new THREE.CanvasTexture(c);
-}
-
-function makeSpecularTexture() {
-  const size = 512;
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  // Ocean = bright specular, land = dark
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, size, size);
-  // Paint land as dark (no specular)
-  // Reuse approximate continent positions
-  ctx.fillStyle = '#111111';
-  [[0.12,0.27,0.09],[0.17,0.29,0.07],[0.28,0.55,0.07],[0.30,0.62,0.06],
-   [0.50,0.28,0.05],[0.52,0.38,0.07],[0.54,0.45,0.08],[0.63,0.28,0.08],
-   [0.76,0.30,0.06],[0.79,0.27,0.05],[0.76,0.60,0.07],[0.60,0.20,0.12],
-  ].forEach(([x,y,r]) => {
-    ctx.beginPath(); ctx.arc(x*size, y*size, r*size*1.1, 0, Math.PI*2); ctx.fill();
   });
+
+  // Polar Ice Caps
+  const nIce = ctx.createLinearGradient(0, 0, 0, height * 0.08);
+  nIce.addColorStop(0, 'rgba(186, 230, 253, 0.7)');
+  nIce.addColorStop(1, 'transparent');
+  ctx.fillStyle = nIce;
+  ctx.fillRect(0, 0, width, height * 0.08);
+
+  const sIce = ctx.createLinearGradient(0, height * 0.92, 0, height);
+  sIce.addColorStop(0, 'transparent');
+  sIce.addColorStop(1, 'rgba(186, 230, 253, 0.7)');
+  ctx.fillStyle = sIce;
+  ctx.fillRect(0, height * 0.92, width, height * 0.08);
+
   return new THREE.CanvasTexture(c);
 }
 
-/** Inner atmosphere sphere */
+/** Inner Atmosphere Layer */
 function AtmosphereInner() {
   const uniforms = useMemo(() => ({
-    uAtmosphereColor: { value: new THREE.Color(0.05, 0.4, 0.9) },
+    uAtmosphereColor: { value: new THREE.Color(0.15, 0.45, 0.95) },
     uIntensity: { value: 1.8 },
   }), []);
+
   return (
-    <mesh scale={[1.05, 1.05, 1.05]}>
+    <mesh scale={[1.025, 1.025, 1.025]}>
       <sphereGeometry args={[EARTH_R, 64, 64]} />
       <shaderMaterial
         vertexShader={atmosphereVertexShader}
         fragmentShader={atmosphereFragmentShader}
         uniforms={uniforms}
-        transparent depthWrite={false}
+        transparent
+        depthWrite={false}
         side={THREE.FrontSide}
         blending={THREE.AdditiveBlending}
       />
@@ -232,20 +212,22 @@ function AtmosphereInner() {
   );
 }
 
-/** Outer atmosphere halo */
+/** Outer Atmosphere Halo */
 function AtmosphereOuter() {
   const uniforms = useMemo(() => ({
-    uAtmosphereColor: { value: new THREE.Color(0.02, 0.25, 0.7) },
-    uIntensity: { value: 1.2 },
+    uAtmosphereColor: { value: new THREE.Color(0.08, 0.35, 0.85) },
+    uIntensity: { value: 1.4 },
   }), []);
+
   return (
-    <mesh scale={[1.15, 1.15, 1.15]}>
-      <sphereGeometry args={[EARTH_R, 32, 32]} />
+    <mesh scale={[1.12, 1.12, 1.12]}>
+      <sphereGeometry args={[EARTH_R, 48, 48]} />
       <shaderMaterial
         vertexShader={atmosphereVertexShader}
         fragmentShader={atmosphereFragmentShader}
         uniforms={uniforms}
-        transparent depthWrite={false}
+        transparent
+        depthWrite={false}
         side={THREE.BackSide}
         blending={THREE.AdditiveBlending}
       />
@@ -253,59 +235,44 @@ function AtmosphereOuter() {
   );
 }
 
-export default function DigitalEarth({ autoRotate = true, autoRotateRef }) {
-  const earthRef = useRef();
-  const cloudRef = useRef();
+export default function DigitalEarth({
+  autoRotate = false,
+  rotYRef,
+  selectedCountry,
+  hoveredCountry,
+}) {
+  const earthMeshRef = useRef();
 
-  const earthTex   = useMemo(() => makeEarthTexture(),   []);
-  const nightTex   = useMemo(() => makeNightTexture(),   []);
-  const cloudTex   = useMemo(() => makeCloudTexture(),   []);
-  const specTex    = useMemo(() => makeSpecularTexture(),[]);
+  const selectedId = selectedCountry?.id || (typeof selectedCountry === 'string' ? selectedCountry.toLowerCase() : null);
+  const hoveredId = hoveredCountry?.id || (typeof hoveredCountry === 'string' ? hoveredCountry.toLowerCase() : null);
 
-  // Expose rotation ref for external control
-  useEffect(() => {
-    if (autoRotateRef) autoRotateRef.current = earthRef.current;
-  }, [autoRotateRef]);
+  // Dynamic texture that updates when country selection changes (triggering polygon purple fill like Image 2!)
+  const vectorTexture = useMemo(() => {
+    return createVectorEarthCanvas(selectedId, hoveredId);
+  }, [selectedId, hoveredId]);
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    if (earthRef.current && autoRotate) {
-      earthRef.current.rotation.y = t * 0.05;
-    }
-    if (cloudRef.current) {
-      cloudRef.current.rotation.y = t * 0.065;
+    if (autoRotate && earthMeshRef.current) {
+      earthMeshRef.current.rotation.y = clock.getElapsedTime() * 0.04;
+      if (rotYRef) rotYRef.current = earthMeshRef.current.rotation.y;
     }
   });
 
   return (
-    <group>
-      {/* ── Main Earth ── */}
-      <mesh ref={earthRef} castShadow receiveShadow>
-        <sphereGeometry args={[EARTH_R, 128, 128]} />
-        <meshPhongMaterial
-          map={earthTex}
-          specularMap={specTex}
-          specular={new THREE.Color(0.3, 0.5, 0.7)}
-          shininess={18}
-          emissiveMap={nightTex}
-          emissive={new THREE.Color(0.9, 0.7, 0.3)}
-          emissiveIntensity={0.45}
-        />
-      </mesh>
-
-      {/* ── Cloud layer ── */}
-      <mesh ref={cloudRef} scale={[1.013, 1.013, 1.013]}>
+    <group ref={earthMeshRef}>
+      {/* Main Vector Earth Sphere */}
+      <mesh receiveShadow castShadow>
         <sphereGeometry args={[EARTH_R, 64, 64]} />
         <meshStandardMaterial
-          alphaMap={cloudTex}
-          transparent
-          opacity={0.65}
-          color="#ffffff"
-          depthWrite={false}
+          map={vectorTexture}
+          roughness={0.4}
+          metalness={0.2}
+          emissive="#0284c7"
+          emissiveIntensity={0.15}
         />
       </mesh>
 
-      {/* ── Atmosphere layers ── */}
+      {/* Atmospheric Glow Shaders */}
       <AtmosphereInner />
       <AtmosphereOuter />
     </group>

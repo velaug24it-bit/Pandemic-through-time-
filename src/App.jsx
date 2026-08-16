@@ -41,6 +41,7 @@ import EarthStatusPanels from './components/ui/EarthStatusPanels';
 import MiniGlobe from './components/ui/MiniGlobe';
 import CountrySearchBox from './components/earth/CountrySearchBox';
 import CountryProfileDrawer from './components/earth/CountryProfileDrawer';
+import NationHistoryModal from './components/earth/NationHistoryModal';
 
 // Phase 3 Time Machine & Museum imports
 import TimeTravelOverlay from './components/timemachine/TimeTravelOverlay';
@@ -133,9 +134,10 @@ export default function App() {
   // Phase 2 Earth View state
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [showShield, setShowShield] = useState(true);
+  const [showShield, setShowShield] = useState(false);
   const [showRoutes, setShowRoutes] = useState(true);
   const [showOrbits, setShowOrbits] = useState(true);
+  const [showNationHistoryModal, setShowNationHistoryModal] = useState(false);
   const earthRotYRef = useRef(0);
 
   // Phase 3 Time Machine & Museum state
@@ -556,7 +558,13 @@ export default function App() {
           <CountryProfileDrawer
             country={selectedCountry}
             onClose={() => setSelectedCountry(null)}
-            onWarpToExhibit={(stageId) => {
+            onOpenNationHistory={() => setShowNationHistoryModal(true)}
+          />
+          <NationHistoryModal
+            visible={showNationHistoryModal}
+            country={selectedCountry}
+            onClose={() => setShowNationHistoryModal(false)}
+            onWarpToStage={(stageId) => {
               audio.playWhoosh();
               goTo(stageId);
             }}
