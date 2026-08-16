@@ -37,10 +37,10 @@ function SatelliteBody({ sat }) {
   });
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} scale={[0.22, 0.22, 0.22]}>
       {/* Body */}
       <mesh>
-        <boxGeometry args={[0.12, 0.06, 0.20]} />
+        <boxGeometry args={[0.08, 0.04, 0.12]} />
         <meshStandardMaterial color="#334455" metalness={0.85} roughness={0.2} />
       </mesh>
       {/* Solar panel left */}

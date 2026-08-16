@@ -83,21 +83,21 @@ function CountryMarker({ country, onHover, onClick }) {
         onPointerOut={handlePointerOut}
         onClick={handleClick}
       >
-        <sphereGeometry args={[0.028, 8, 8]} />
+        <sphereGeometry args={[0.016, 8, 8]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={hovered ? 1.5 : 0.6}
+          emissiveIntensity={hovered ? 1.8 : 0.4}
           roughness={0.3}
           metalness={0.2}
         />
       </mesh>
 
-      {/* Vertical light beam for high-risk / hovered */}
-      {(hovered || country.risk === 'critical') && (
-        <mesh position={[0, 0.4, 0]}>
-          <cylinderGeometry args={[0.005, 0.02, 0.8, 8]} />
-          <meshBasicMaterial color={color} transparent opacity={hovered ? 0.8 : 0.4} />
+      {/* Vertical light beam when hovered */}
+      {hovered && (
+        <mesh position={[0, 0.35, 0]}>
+          <cylinderGeometry args={[0.003, 0.015, 0.7, 8]} />
+          <meshBasicMaterial color={color} transparent opacity={0.7} />
         </mesh>
       )}
 

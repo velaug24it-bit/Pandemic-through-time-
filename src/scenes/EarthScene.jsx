@@ -30,14 +30,17 @@ function SunLight() {
   return (
     <>
       <directionalLight
-        position={[8, 4, 6]}
-        intensity={2.2}
-        color="#fff8e8"
+        position={[6, 4, 8]}
+        intensity={2.4}
+        color="#ffffff"
         castShadow={false}
       />
-      <ambientLight intensity={0.12} color="#001122" />
-      {/* Deep space fill */}
-      <pointLight color="#000820" intensity={0.4} distance={50} />
+      <ambientLight intensity={0.75} color="#e0f2fe" />
+      <directionalLight
+        position={[-6, -3, -6]}
+        intensity={0.6}
+        color="#38bdf8"
+      />
     </>
   );
 }
