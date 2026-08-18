@@ -248,7 +248,6 @@ export default function EarthScene({
         antialias: true,
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.1,
-        xr: { enabled: true },
       }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}

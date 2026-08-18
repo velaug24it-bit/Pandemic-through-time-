@@ -84,12 +84,12 @@ export default function WebXRManager({ session, onNavigateStage, onExitVR }) {
   const btnIntelTex      = useMemo(() => createVRButtonTexture('🌐 INTEL', '#00ff9d'), []);
   const btnExitTex       = useMemo(() => createVRButtonTexture('🚪 EXIT VR', '#ff3860', 'rgba(45,6,15,0.95)'), []);
 
-  // 1. Bind WebXR session to Three.js WebGLRenderer
+  // 1. Bind WebXR session to Three.js WebGLRenderer ONLY when session is active
   useEffect(() => {
-    if (!gl) return;
-    gl.xr.enabled = true;
+    if (!gl?.xr) return;
 
     if (session) {
+      gl.xr.enabled = true;
       gl.xr.setSession(session).then(() => {
         setIsPresenting(true);
       }).catch((err) => {
@@ -98,6 +98,7 @@ export default function WebXRManager({ session, onNavigateStage, onExitVR }) {
 
       const handleSessionEnd = () => {
         setIsPresenting(false);
+        if (gl?.xr) gl.xr.enabled = false;
         onExitVR?.();
       };
 
@@ -105,39 +106,48 @@ export default function WebXRManager({ session, onNavigateStage, onExitVR }) {
       return () => {
         session.removeEventListener('end', handleSessionEnd);
       };
+    } else {
+      gl.xr.enabled = false;
+      setIsPresenting(false);
     }
   }, [gl, session, onExitVR]);
 
-  // 2. Setup 6-DoF VR Controllers with laser rays
+  // 2. Setup 6-DoF VR Controllers with laser rays ONLY during active session
   useEffect(() => {
-    if (!gl?.xr || !scene) return;
+    if (!gl?.xr || !session || typeof gl.xr.getController !== 'function' || !scene) return;
 
-    const controller0 = gl.xr.getController(0);
-    const controller1 = gl.xr.getController(1);
+    try {
+      const controller0 = gl.xr.getController(0);
+      const controller1 = gl.xr.getController(1);
 
-    scene.add(controller0);
-    scene.add(controller1);
+      if (!controller0 || !controller1) return;
 
-    const lineGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0, -5),
-    ]);
-    const lineMat0 = new THREE.LineBasicMaterial({ color: 0x00c8ff, linewidth: 2 });
-    const lineMat1 = new THREE.LineBasicMaterial({ color: 0x00ff9d, linewidth: 2 });
+      scene.add(controller0);
+      scene.add(controller1);
 
-    const line0 = new THREE.Line(lineGeo, lineMat0);
-    const line1 = new THREE.Line(lineGeo, lineMat1);
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -5),
+      ]);
+      const lineMat0 = new THREE.LineBasicMaterial({ color: 0x00c8ff, linewidth: 2 });
+      const lineMat1 = new THREE.LineBasicMaterial({ color: 0x00ff9d, linewidth: 2 });
 
-    controller0.add(line0);
-    controller1.add(line1);
+      const line0 = new THREE.Line(lineGeo, lineMat0);
+      const line1 = new THREE.Line(lineGeo, lineMat1);
 
-    return () => {
-      controller0.remove(line0);
-      controller1.remove(line1);
-      scene.remove(controller0);
-      scene.remove(controller1);
-    };
-  }, [gl, scene]);
+      controller0.add(line0);
+      controller1.add(line1);
+
+      return () => {
+        controller0.remove(line0);
+        controller1.remove(line1);
+        scene.remove(controller0);
+        scene.remove(controller1);
+      };
+    } catch (err) {
+      console.warn('XR Controller setup skipped:', err);
+    }
+  }, [gl, session, scene]);
 
   // 3. Monitor presenting state
   useFrame(() => {

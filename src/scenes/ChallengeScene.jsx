@@ -76,7 +76,7 @@ export default function ChallengeScene({
   return (
     <Canvas
       camera={{ position: [0, 2.5, 7.5], fov: 60, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, xr: { enabled: true } }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       onCreated={({ scene }) => {

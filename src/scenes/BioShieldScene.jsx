@@ -165,7 +165,7 @@ export default function BioShieldScene({
   return (
     <Canvas
       camera={{ position: [0, 5, 11], fov: 58, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isNight ? 1.4 : 1.0, xr: { enabled: true } }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isNight ? 1.4 : 1.0 }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       onCreated={({ scene }) => {

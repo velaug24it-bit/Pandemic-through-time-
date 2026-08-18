@@ -156,7 +156,7 @@ export default function MuseumScene({
   return (
     <Canvas
       camera={{ position: [0, 1, 5], fov: 60, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0, xr: { enabled: true } }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
     >
