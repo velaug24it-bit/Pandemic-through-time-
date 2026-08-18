@@ -1,8 +1,11 @@
 /**
  * EarthScene.jsx
  * Standalone R3F canvas for Phase 2 – Interactive Digital Earth.
- * Owns OrbitControls, all Earth sub-components, satellites, and routes.
- * Phase 1 MainScene.jsx is completely untouched.
+ * Features:
+ *  - High-precision WebXR VR integration for Meta Quest 3
+ *  - Auto-offset in VR space so the Earth floats directly in front of the user (z = -4.0)
+ *  - OrbitControls disabled in VR to prevent camera fighting
+ *  - Real NASA satellite surface, GeoJSON country borders, and dynamic polygon highlight
  */
 import { useRef, useState, useCallback, useEffect, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
@@ -15,15 +18,16 @@ import {
 import gsap from 'gsap';
 import * as THREE from 'three';
 
-import DigitalEarth       from '../components/earth/DigitalEarth';
+import DigitalEarth          from '../components/earth/DigitalEarth';
 import GlobeInteractionLayer from '../components/earth/GlobeInteractionLayer';
-import CountryMarkers     from '../components/earth/CountryMarkers';
-import PandemicRoutes     from '../components/earth/PandemicRoutes';
-import OutbreakMarkers    from '../components/earth/OutbreakMarkers';
-import BioshieldDome      from '../components/earth/BioshieldDome';
-import SatelliteNetwork   from '../components/satellites/SatelliteNetwork';
-import CommBeams          from '../components/satellites/CommBeams';
-import { latLonToVec3 }  from '../data/countries';
+import CountryMarkers        from '../components/earth/CountryMarkers';
+import PandemicRoutes        from '../components/earth/PandemicRoutes';
+import OutbreakMarkers       from '../components/earth/OutbreakMarkers';
+import BioshieldDome         from '../components/earth/BioshieldDome';
+import SatelliteNetwork      from '../components/satellites/SatelliteNetwork';
+import CommBeams             from '../components/satellites/CommBeams';
+import WebXRManager          from '../components/vr/WebXRManager';
+import { latLonToVec3 }     from '../data/countries';
 
 /** Sun directional light rig */
 function SunLight() {
@@ -46,20 +50,23 @@ function SunLight() {
 }
 
 /** Controls + GSAP camera */
-function CameraRig({ targetRef, orbitRef }) {
-  const { camera } = useThree();
+function CameraRig({ orbitRef }) {
+  const { camera, gl } = useThree();
+  const isVR = gl?.xr?.isPresenting || false;
 
   useEffect(() => {
-    // Initial cinematic pull back
+    if (isVR) return;
+    // Initial cinematic pull back for desktop
     gsap.from(camera.position, {
       x: 0, y: 0, z: 3,
       duration: 2, ease: 'power3.inOut',
     });
-  }, [camera]);
+  }, [camera, isVR]);
 
   return (
     <OrbitControls
       ref={orbitRef}
+      enabled={!isVR}
       enablePan={false}
       enableZoom
       enableRotate
@@ -91,7 +98,7 @@ function SpaceAmbience() {
 /** Fallback */
 function EarthFallback() {
   return (
-    <mesh>
+    <mesh position={[0, 0, -4]}>
       <sphereGeometry args={[2, 16, 16]} />
       <meshBasicMaterial color="#0d3a6e" wireframe />
     </mesh>
@@ -104,16 +111,20 @@ function EarthCanvasScene({
   selectedCountry,
   onCountryHover, onCountryClick,
   earthRotYRef,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
 }) {
   const earthGroupRef    = useRef();
   const orbitRef         = useRef();
   const lastInteractTime = useRef(Date.now());
   const [hoveredCountry, setHoveredCountry] = useState(null);
-  const { camera }       = useThree();
+  const { camera, gl }   = useThree();
+  const isVR = gl?.xr?.isPresenting || false;
 
-  // Handle selectedCountry camera fly-to & focal lock
+  // Handle selectedCountry camera fly-to & focal lock on desktop
   useEffect(() => {
-    if (!selectedCountry || !earthGroupRef.current) return;
+    if (isVR || !selectedCountry || !earthGroupRef.current) return;
 
     lastInteractTime.current = Date.now();
 
@@ -144,7 +155,7 @@ function EarthCanvasScene({
         }
       },
     });
-  }, [selectedCountry, camera, earthRotYRef]);
+  }, [selectedCountry, camera, earthRotYRef, isVR]);
 
   useFrame(({ clock }) => {
     const timeSinceInteract = (Date.now() - lastInteractTime.current) / 1000;
@@ -172,41 +183,50 @@ function EarthCanvasScene({
       <SpaceAmbience />
       <CameraRig orbitRef={orbitRef} />
 
+      {/* ── WebXR Manager (Active in VR) ── */}
+      <WebXRManager
+        session={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+
       <Suspense fallback={<EarthFallback />}>
-        {/* Earth Group with vector boundaries and surface raycaster */}
-        <group ref={earthGroupRef}>
-          <DigitalEarth
-            autoRotate={false}
-            selectedCountry={selectedCountry}
-            hoveredCountry={hoveredCountry}
-          />
+        {/* Earth Group: in VR, placed at [0, 0, -4.0] so it floats in front of the Quest user */}
+        <group position={isVR ? [0, 0, -4.0] : [0, 0, 0]}>
+          <group ref={earthGroupRef}>
+            <DigitalEarth
+              autoRotate={false}
+              selectedCountry={selectedCountry}
+              hoveredCountry={hoveredCountry}
+            />
 
-          {/* 3D Surface Click & Touch Raycaster */}
-          <GlobeInteractionLayer
-            selectedCountry={selectedCountry}
-            onCountryHover={handleCountryHover}
-            onCountryClick={handleCountryClick}
-          />
+            {/* 3D Surface Click & Touch Raycaster */}
+            <GlobeInteractionLayer
+              selectedCountry={selectedCountry}
+              onCountryHover={handleCountryHover}
+              onCountryClick={handleCountryClick}
+            />
 
-          {/* Country markers (on the globe surface) */}
-          <CountryMarkers
-            onCountryHover={handleCountryHover}
-            onCountryClick={handleCountryClick}
-          />
+            {/* Country markers (on the globe surface) */}
+            <CountryMarkers
+              onCountryHover={handleCountryHover}
+              onCountryClick={handleCountryClick}
+            />
 
-          {/* Outbreak hotspot rings */}
-          <OutbreakMarkers />
+            {/* Outbreak hotspot rings */}
+            <OutbreakMarkers />
 
-          {/* Pandemic routes (arcs) */}
-          {showRoutes && <PandemicRoutes />}
+            {/* Pandemic routes (arcs) */}
+            {showRoutes && <PandemicRoutes />}
 
-          {/* BioShield dome (optional toggle) */}
-          {showShield && <BioshieldDome />}
+            {/* BioShield dome (optional toggle) */}
+            {showShield && <BioshieldDome />}
+          </group>
+
+          {/* Satellites in outer orbit */}
+          <SatelliteNetwork showOrbits={showOrbits} />
+          <CommBeams visible />
         </group>
-
-        {/* Satellites + beams */}
-        <SatelliteNetwork showOrbits={showOrbits} />
-        <CommBeams visible />
       </Suspense>
     </>
   );
@@ -217,6 +237,9 @@ export default function EarthScene({
   selectedCountry,
   onCountryHover, onCountryClick,
   earthRotYRef,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
 }) {
   return (
     <Canvas
@@ -225,6 +248,7 @@ export default function EarthScene({
         antialias: true,
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.1,
+        xr: { enabled: true },
       }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
@@ -240,6 +264,9 @@ export default function EarthScene({
         onCountryHover={onCountryHover}
         onCountryClick={onCountryClick}
         earthRotYRef={earthRotYRef}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
       />
     </Canvas>
   );

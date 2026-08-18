@@ -18,10 +18,15 @@ import ImmuneSystem3D         from '../components/humanbody/ImmuneSystem3D';
 import VaccineExplainer3D     from '../components/humanbody/VaccineExplainer3D';
 import DNAGenetics3D          from '../components/humanbody/DNAGenetics3D';
 
+import WebXRManager from '../components/vr/WebXRManager';
+
 export default function BodyScene({
   organId = 'bloodstream',
   viewMode = 'bloodstream',
   infectionStep = 0,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
 }) {
   const currentOrgan = useMemo(() => {
     return ORGAN_SYSTEMS.find(o => o.id === organId) || ORGAN_SYSTEMS[0];
@@ -49,7 +54,7 @@ export default function BodyScene({
   return (
     <Canvas
       camera={{ position: [0, 0, 5], fov: 60, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       onCreated={({ scene }) => {
@@ -80,6 +85,13 @@ export default function BodyScene({
 
         {/* Flowing plasma dust sparkles matching organ color */}
         <Sparkles count={160} scale={[18, 18, 18]} size={0.6} speed={0.08} opacity={0.4} color={currentOrgan.color} />
+
+        {/* WebXR Manager & VR Locomotion */}
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );

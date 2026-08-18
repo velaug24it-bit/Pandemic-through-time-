@@ -66,11 +66,17 @@ function ChallengeTheaterArchitecture() {
   );
 }
 
-export default function ChallengeScene() {
+import WebXRManager from '../components/vr/WebXRManager';
+
+export default function ChallengeScene({
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   return (
     <Canvas
       camera={{ position: [0, 2.5, 7.5], fov: 60, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       onCreated={({ scene }) => {
@@ -104,6 +110,13 @@ export default function ChallengeScene() {
 
         {/* Floating Particles Atmosphere */}
         <Sparkles count={180} scale={[24, 12, 24]} size={0.65} speed={0.06} opacity={0.4} color="#7b2ff7" />
+
+        {/* WebXR Manager & VR Locomotion */}
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );

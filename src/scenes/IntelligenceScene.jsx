@@ -46,13 +46,17 @@ function CommandHubArchitecture() {
   );
 }
 
-export default function IntelligenceScene() {
+export default function IntelligenceScene({
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   const earthRotRef = useRef(0);
 
   return (
     <Canvas
       camera={{ position: [0, 2.5, 8], fov: 60, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
     >
@@ -88,8 +92,13 @@ export default function IntelligenceScene() {
         {/* Ambient Telemetry Sparkles */}
         <Sparkles count={180} scale={[24, 12, 24]} size={0.6} speed={0.05} opacity={0.4} color="#00c8ff" />
         <Sparkles count={100} scale={[20, 10, 20]} size={0.8} speed={0.08} opacity={0.3} color="#7b2ff7" />
+        
         {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager />
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );

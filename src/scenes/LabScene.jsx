@@ -23,6 +23,7 @@ import * as THREE from 'three';
 import RoboticArm3D  from '../components/researchlab/RoboticArm3D';
 import HoloTable3D   from '../components/researchlab/HoloTable3D';
 import AIOrb         from '../components/ai/AIOrb';
+import WebXRManager  from '../components/vr/WebXRManager';
 import Covid19Model  from '../components/pathogens/Covid19Model';
 import DNAGenetics3D from '../components/humanbody/DNAGenetics3D';
 
@@ -218,7 +219,12 @@ function ResearchDashboard3D() {
   );
 }
 
-export default function LabScene({ activeStationId = 'analysis' }) {
+export default function LabScene({
+  activeStationId = 'analysis',
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   const renderWorkstation3DModel = () => {
     switch (activeStationId) {
       case 'analysis':
@@ -236,7 +242,7 @@ export default function LabScene({ activeStationId = 'analysis' }) {
             </mesh>
           </group>
         );
-      case 'drugdiscovery':
+      case 'drug':
         return <DrugDiscovery3D />;
       case 'vaccine':
         return <VaccineCapsule3D />;
@@ -250,7 +256,7 @@ export default function LabScene({ activeStationId = 'analysis' }) {
   return (
     <Canvas
       camera={{ position: [0, 1.2, 5.2], fov: 58, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       onCreated={({ scene }) => {
@@ -296,6 +302,13 @@ export default function LabScene({ activeStationId = 'analysis' }) {
 
         {/* Floating Bio-Particles */}
         <Sparkles count={150} scale={[20, 10, 20]} size={0.6} speed={0.05} opacity={0.35} color="#00c8ff" />
+
+        {/* WebXR Manager & VR Locomotion */}
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );

@@ -2,7 +2,7 @@
  * VRButton.jsx
  * WebXR Hardware Detection & Enter/Exit VR Controller Component for Phase 10.
  * Automatically checks navigator.xr.isSessionSupported('immersive-vr').
- * Displays "🥽 ENTER VR" button when WebXR VR is supported, and handles session lifecycle.
+ * Displays "🥽 ENTER VR" button when WebXR VR is supported, and passes session to App.
  */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -63,7 +63,7 @@ export default function VRButton({ onSessionStart, onSessionEnd }) {
   return (
     <AnimatePresence>
       <div style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 999, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        {/* Render ENTER VR Button (or Simulator Fallback Trigger if desktop) */}
+        {/* Render ENTER VR Button */}
         <motion.button
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

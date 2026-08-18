@@ -97,13 +97,14 @@ function AirlockDoor({ isOpen }) {
   );
 }
 
-/** Camera controller — uses GSAP to animate between stage positions */
+/** Camera controller — uses GSAP to animate between stage positions on desktop */
 function CameraController({ stage }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const targetRef   = useRef(new THREE.Vector3(0, 0, 0));
-  const controlsRef = useRef(null);
+  const isVR = gl?.xr?.isPresenting || false;
 
   useEffect(() => {
+    if (isVR) return;
     const cfg = CAMERA_POSITIONS[stage];
     if (!cfg) return;
 
@@ -122,22 +123,15 @@ function CameraController({ stage }) {
       duration: 2.2,
       ease: 'power3.inOut',
     });
-  }, [stage, camera]);
+  }, [stage, camera, isVR]);
 
   useFrame(() => {
-    camera.lookAt(targetRef.current);
+    if (!isVR) {
+      camera.lookAt(targetRef.current);
+    }
   });
 
-  return (
-    <OrbitControls
-      ref={controlsRef}
-      enablePan={false}
-      enableZoom={stage >= SCENE_STAGES.COMMAND_CENTER}
-      enableRotate={stage >= SCENE_STAGES.COMMAND_CENTER}
-      maxDistance={20}
-      minDistance={1}
-    />
-  );
+  return null;
 }
 
 /** Fallback while suspense loads */
@@ -150,7 +144,7 @@ function SceneFallback() {
   );
 }
 
-export default function MainScene({ stage, onRocketComplete, onCountdown }) {
+export default function MainScene({ stage, onRocketComplete, onCountdown, xrSession, onNavigateStage, onExitVR }) {
   const isRocket   = stage === SCENE_STAGES.ROCKET_LAUNCH;
   const isFlight   = stage >= SCENE_STAGES.SPACE_FLIGHT;
   const isStation  = stage >= SCENE_STAGES.ORBITAL_STATION;
@@ -160,7 +154,7 @@ export default function MainScene({ stage, onRocketComplete, onCountdown }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 5], fov: 60, near: 0.01, far: 2000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
     >
@@ -278,7 +272,11 @@ export default function MainScene({ stage, onRocketComplete, onCountdown }) {
           </>
         )}
         {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager />
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );

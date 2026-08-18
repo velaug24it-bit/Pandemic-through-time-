@@ -138,6 +138,7 @@ export default function App() {
   const [showRoutes, setShowRoutes] = useState(true);
   const [showOrbits, setShowOrbits] = useState(true);
   const [showNationHistoryModal, setShowNationHistoryModal] = useState(false);
+  const [xrSession, setXrSession] = useState(null);
   const earthRotYRef = useRef(0);
 
   // Phase 3 Time Machine & Museum state
@@ -453,11 +454,21 @@ export default function App() {
   return (
     <div style={{ width: '100vw', height: '100dvh', background: '#010409', overflow: 'hidden', position: 'relative' }}>
       {/* ── Phase 10 WebXR VR Controller Button (Always accessible) ── */}
-      <VRButton />
+      <VRButton
+        onSessionStart={(session) => setXrSession(session)}
+        onSessionEnd={() => setXrSession(null)}
+      />
 
       {/* ── Phase 1 MainScene Canvas (stages 2-6) ── */}
       {stage >= SCENE_STAGES.CINEMATIC_INTRO && !isEarthView && !isTimeTravel && !isMuseum && !isShrink && !isBodyJourney && !isAILab && !isOutbreakSim && !isBioShield && !isChallenge && !isIntelligence && (
-        <MainScene stage={stage} onRocketComplete={onRocketComplete} onCountdown={setCountdown} />
+        <MainScene
+          stage={stage}
+          onRocketComplete={onRocketComplete}
+          onCountdown={setCountdown}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
+        />
       )}
 
       {/* ── Phase 2 EarthScene Canvas (stage 7) ── */}
@@ -473,6 +484,9 @@ export default function App() {
             setSelectedCountry(country);
           }}
           earthRotYRef={earthRotYRef}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
         />
       )}
 
@@ -482,6 +496,9 @@ export default function App() {
           currentPandemic={activePandemic}
           viewMode={viewMode}
           wireframe={wireframe}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
         />
       )}
 
@@ -491,17 +508,30 @@ export default function App() {
           organId={activeOrganId}
           viewMode={bodyViewMode}
           infectionStep={infectionStep}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
         />
       )}
 
       {/* ── Phase 5 LabScene Canvas (stage 12) ── */}
       {isAILab && (
-        <LabScene activeStationId={activeStationId} />
+        <LabScene
+          activeStationId={activeStationId}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
+        />
       )}
 
       {/* ── Phase 6 OutbreakScene Canvas (stage 13) ── */}
       {isOutbreakSim && (
-        <OutbreakScene isRunning={simRunning} />
+        <OutbreakScene
+          isRunning={simRunning}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
+        />
       )}
 
       {/* ── Phase 7 BioShieldScene Canvas (stage 15) ── */}
@@ -510,17 +540,28 @@ export default function App() {
           isNight={isNight}
           selectedBuildingId={selectedBuilding.id}
           onSelectBuilding={setSelectedBuilding}
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
         />
       )}
 
       {/* ── Phase 8 ChallengeScene Canvas (stage 16) ── */}
       {isChallenge && (
-        <ChallengeScene />
+        <ChallengeScene
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
+        />
       )}
 
       {/* ── Phase 9 IntelligenceScene Canvas (stage 17) ── */}
       {isIntelligence && (
-        <IntelligenceScene />
+        <IntelligenceScene
+          xrSession={xrSession}
+          onNavigateStage={goTo}
+          onExitVR={() => setXrSession(null)}
+        />
       )}
 
       {/* ── 1. Premium Loading Screen ── */}

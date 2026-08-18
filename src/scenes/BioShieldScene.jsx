@@ -152,15 +152,20 @@ function CityBuildings({ onSelectBuilding, selectedBuildingId }) {
   );
 }
 
+import WebXRManager from '../components/vr/WebXRManager';
+
 export default function BioShieldScene({
   isNight = false,
   selectedBuildingId = 'smarthospital',
   onSelectBuilding,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
 }) {
   return (
     <Canvas
       camera={{ position: [0, 5, 11], fov: 58, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isNight ? 1.4 : 1.0 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isNight ? 1.4 : 1.0, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
       onCreated={({ scene }) => {
@@ -203,6 +208,13 @@ export default function BioShieldScene({
 
         {/* Sparkles Particle Atmosphere */}
         <Sparkles count={180} scale={[25, 12, 25]} size={0.6} speed={0.05} opacity={0.4} color="#00ff9d" />
+
+        {/* WebXR Manager & VR Locomotion */}
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );

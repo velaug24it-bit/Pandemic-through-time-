@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import DigitalEarth from '../components/earth/DigitalEarth';
 import CommBeams    from '../components/satellites/CommBeams';
 import AIOrb        from '../components/ai/AIOrb';
+import WebXRManager from '../components/vr/WebXRManager';
 
 /** Command Center Theater Architecture */
 function CommandTheaterArchitecture() {
@@ -42,13 +43,18 @@ function CommandTheaterArchitecture() {
   );
 }
 
-export default function OutbreakScene({ isRunning = true }) {
+export default function OutbreakScene({
+  isRunning = true,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   const earthRotRef = useRef(0);
 
   return (
     <Canvas
       camera={{ position: [0, 2, 7], fov: 60, near: 0.01, far: 1000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, xr: { enabled: true } }}
       shadows={false}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
     >
@@ -85,6 +91,13 @@ export default function OutbreakScene({ isRunning = true }) {
 
         {/* Red Emergency Particles */}
         <Sparkles count={150} scale={[20, 10, 20]} size={0.6} speed={0.06} opacity={0.35} color="#ff3860" />
+
+        {/* WebXR Manager & VR Locomotion */}
+        <WebXRManager
+          session={xrSession}
+          onNavigateStage={onNavigateStage}
+          onExitVR={onExitVR}
+        />
       </Suspense>
     </Canvas>
   );
