@@ -176,6 +176,7 @@ export default function BioShieldScene({
       <PerformanceMonitor onDecline={() => {}} />
 
       <OrbitControls
+        enabled={!xrSession}
         enablePan={false}
         enableZoom
         enableRotate

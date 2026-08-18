@@ -459,8 +459,8 @@ export default function App() {
         onSessionEnd={() => setXrSession(null)}
       />
 
-      {/* ── Phase 1 MainScene Canvas (stages 2-6) ── */}
-      {stage >= SCENE_STAGES.CINEMATIC_INTRO && !isEarthView && !isTimeTravel && !isMuseum && !isShrink && !isBodyJourney && !isAILab && !isOutbreakSim && !isBioShield && !isChallenge && !isIntelligence && (
+      {/* ── Phase 1 MainScene Canvas (stages 2-6 or whenever in WebXR) ── */}
+      {(stage >= SCENE_STAGES.CINEMATIC_INTRO || Boolean(xrSession)) && !isEarthView && !isTimeTravel && !isMuseum && !isShrink && !isBodyJourney && !isAILab && !isOutbreakSim && !isBioShield && !isChallenge && !isIntelligence && (
         <MainScene
           stage={stage}
           onRocketComplete={onRocketComplete}

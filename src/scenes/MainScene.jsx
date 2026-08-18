@@ -1,19 +1,15 @@
 /**
  * MainScene.jsx
  * Root React Three Fiber canvas orchestrating all 3D scenes by stage.
- * Uses GSAP for camera transitions between stages.
- * Includes:
- *  - SpaceEnvironment (stars, Milky Way, Moon, Sun)
- *  - RocketLaunch (pad, countdown, thruster fire, smoke, camera shake)
- *  - InteractiveEarth (procedural day/night Earth outside station)
- *  - OrbitalStation (torus ring, solar arrays, docking port)
- *  - MaintenanceDrone (hovering station corridor drones)
- *  - AirlockDoor (sliding mechanical airlock)
- *  - AIOrb & HolographicMap
+ * Uses GSAP for camera transitions between stages on desktop.
+ * In WebXR (Meta Quest 3):
+ *  - Fully illuminates the Space Command Center & Earth with dedicated VR lighting
+ *  - Opens the panoramic window view so Earth and space are visible from inside the station
+ *  - Positions all main objects (Holographic Map, AI Orb, Drones, Earth, Station) at comfortable VR distances
  */
 import { useEffect, useRef, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerformanceMonitor, AdaptiveDpr } from '@react-three/drei';
+import { PerformanceMonitor, AdaptiveDpr } from '@react-three/drei';
 import gsap from 'gsap';
 import * as THREE from 'three';
 
@@ -144,20 +140,18 @@ function SceneFallback() {
   );
 }
 
-export default function MainScene({ stage, onRocketComplete, onCountdown, xrSession, onNavigateStage, onExitVR }) {
+/** Inner Scene Content with VR state awareness */
+function MainSceneContent({ stage, onRocketComplete, onCountdown, xrSession, onNavigateStage, onExitVR }) {
+  const { gl } = useThree();
+  const isVR = gl?.xr?.isPresenting || Boolean(xrSession);
+
   const isRocket   = stage === SCENE_STAGES.ROCKET_LAUNCH;
-  const isFlight   = stage >= SCENE_STAGES.SPACE_FLIGHT;
-  const isStation  = stage >= SCENE_STAGES.ORBITAL_STATION;
-  const isCommand  = stage >= SCENE_STAGES.COMMAND_CENTER;
-  const isMission  = stage >= SCENE_STAGES.MISSION_CONTROL;
+  const isFlight   = stage >= SCENE_STAGES.SPACE_FLIGHT || isVR;
+  const isStation  = stage >= SCENE_STAGES.ORBITAL_STATION || isVR;
+  const isCommand  = stage >= SCENE_STAGES.COMMAND_CENTER || isVR;
 
   return (
-    <Canvas
-      camera={{ position: [0, 0, 5], fov: 60, near: 0.01, far: 2000 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.9, xr: { enabled: true } }}
-      shadows={false}
-      style={{ position: 'fixed', inset: 0, zIndex: 0 }}
-    >
+    <>
       {/* Performance adaptive DPR */}
       <AdaptiveDpr pixelated />
       <PerformanceMonitor onDecline={() => {}} />
@@ -166,29 +160,37 @@ export default function MainScene({ stage, onRocketComplete, onCountdown, xrSess
       <CameraController stage={stage} />
 
       <Suspense fallback={<SceneFallback />}>
-        {/* ── Space environment (always visible from flight onward) ── */}
+        {/* ── VR & Desktop Scene Lighting ── */}
+        <ambientLight color="#88aacc" intensity={isVR ? 1.2 : 0.6} />
+        <directionalLight
+          position={[6, 12, 6]}
+          intensity={isVR ? 2.5 : 1.8}
+          color="#ffffff"
+        />
+
+        {/* ── Space environment (stars, moon, solar directional light) ── */}
         <SpaceEnvironment visible={isFlight} />
 
-        {/* ── Rocket launch sequence ── */}
-        {isRocket && (
+        {/* ── Rocket launch sequence (desktop intro) ── */}
+        {isRocket && !isVR && (
           <RocketLaunch onComplete={onRocketComplete} onCountdown={onCountdown} />
         )}
 
-        {/* ── Earth (visible from space flight onward) ── */}
+        {/* ── Earth (Framed outside the panoramic window in Command Center) ── */}
         {isFlight && (
           <InteractiveEarth
-            position={isCommand ? [-4, -1, -8] : [0, 0, 0]}
+            position={isCommand ? [-2.8, 0.4, -9.0] : [0, 0, 0]}
           />
         )}
 
         {/* ── Orbital station ── */}
         {isStation && (
-          <OrbitalStation position={[0, 0, -10]} />
+          <OrbitalStation position={[0, 0, -12]} />
         )}
 
         {/* ── Command center holographic elements ── */}
         {isCommand && (
-          <>
+          <group position={[0, 0, 0]}>
             {/* Sliding airlock door */}
             <AirlockDoor isOpen={isCommand} />
 
@@ -200,68 +202,82 @@ export default function MainScene({ stage, onRocketComplete, onCountdown, xrSess
             <HolographicMap position={[-1.8, 0.5, -2.5]} />
 
             {/* AI orb */}
-            <AIOrb position={[2.0, 0.3, -1.5]} />
+            <AIOrb position={[2.0, 0.3, -1.8]} />
 
-            {/* Command center floor lighting */}
-            <pointLight color="#001a33" intensity={2} distance={15} position={[0, -2, 0]} />
-            <pointLight color="#003366" intensity={1.5} distance={10} position={[0, 3, -3]} />
+            {/* Command center interior lighting */}
+            <pointLight color="#00c8ff" intensity={2.5} distance={15} position={[0, 2.5, -2]} />
+            <pointLight color="#7b2ff7" intensity={1.8} distance={12} position={[-3, 2, -3]} />
 
             {/* Transparent floor plane */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
               <planeGeometry args={[20, 20]} />
               <meshStandardMaterial
-                color="#001122"
+                color="#06182a"
                 transparent
-                opacity={0.85}
-                metalness={0.6}
-                roughness={0.4}
+                opacity={0.9}
+                metalness={0.7}
+                roughness={0.3}
               />
             </mesh>
 
             {/* Grid floor lines */}
-            <gridHelper args={[20, 20, 0x003355, 0x001a33]} position={[0, -1.49, 0]} />
+            <gridHelper args={[20, 20, 0x00c8ff, 0x003366]} position={[0, -1.49, 0]} />
 
-            {/* Station interior walls (boxes forming corridor feel) */}
-            <mesh position={[0, 0, -6]}>
-              <boxGeometry args={[16, 8, 0.1]} />
-              <meshStandardMaterial color="#0a1520" metalness={0.7} roughness={0.3} />
-            </mesh>
+            {/* Station interior side walls */}
             <mesh position={[-8, 0, -3]} rotation={[0, Math.PI / 2, 0]}>
-              <boxGeometry args={[6, 8, 0.1]} />
-              <meshStandardMaterial color="#0a1520" metalness={0.7} roughness={0.3} />
+              <boxGeometry args={[8, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
             </mesh>
             <mesh position={[8, 0, -3]} rotation={[0, -Math.PI / 2, 0]}>
-              <boxGeometry args={[6, 8, 0.1]} />
-              <meshStandardMaterial color="#0a1520" metalness={0.7} roughness={0.3} />
+              <boxGeometry args={[8, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
             </mesh>
 
-            {/* Giant Panoramic Window (back wall opening) */}
+            {/* Station back wall with OPENING for Panoramic Window */}
+            <mesh position={[-6, 0, -6]}>
+              <boxGeometry args={[4, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[6, 0, -6]}>
+              <boxGeometry args={[4, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 3.6, -6]}>
+              <boxGeometry args={[8, 0.8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, -2.0, -6]}>
+              <boxGeometry args={[8, 1.0, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+
+            {/* Giant Panoramic Window (Clear glass opening) */}
             <mesh position={[0, 0.8, -5.94]}>
-              <planeGeometry args={[10, 4.5]} />
+              <planeGeometry args={[8, 4.8]} />
               <meshPhysicalMaterial
-                color="#000814"
-                transmission={0.95}
-                thickness={0.3}
-                roughness={0.02}
+                color="#001830"
+                transmission={0.92}
+                thickness={0.2}
+                roughness={0.05}
                 transparent
-                opacity={0.3}
+                opacity={0.25}
               />
             </mesh>
 
             {/* Window metal frame border */}
             <mesh position={[0, 0.8, -5.92]}>
-              <ringGeometry args={[4.8, 5.0, 4]} />
-              <meshStandardMaterial color="#334455" metalness={0.8} roughness={0.2} />
+              <ringGeometry args={[3.8, 4.2, 4]} />
+              <meshStandardMaterial color="#3a4f66" metalness={0.85} roughness={0.2} />
             </mesh>
 
             {/* Holo light strips on ceiling */}
             {[-3, 0, 3].map((x) => (
               <mesh key={x} position={[x, 3.9, -3]}>
-                <boxGeometry args={[0.06, 0.05, 6]} />
-                <meshStandardMaterial emissive="#0044aa" emissiveIntensity={2} color="#001133" />
+                <boxGeometry args={[0.08, 0.05, 6]} />
+                <meshStandardMaterial emissive="#00c8ff" emissiveIntensity={2} color="#002244" />
               </mesh>
             ))}
-          </>
+          </group>
         )}
 
         {/* Rocket launch pad lighting */}
@@ -271,6 +287,7 @@ export default function MainScene({ stage, onRocketComplete, onCountdown, xrSess
             <pointLight position={[0, 0, 0]} color="#ff4400" intensity={0} />
           </>
         )}
+
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
@@ -278,6 +295,26 @@ export default function MainScene({ stage, onRocketComplete, onCountdown, xrSess
           onExitVR={onExitVR}
         />
       </Suspense>
+    </>
+  );
+}
+
+export default function MainScene({ stage, onRocketComplete, onCountdown, xrSession, onNavigateStage, onExitVR }) {
+  return (
+    <Canvas
+      camera={{ position: [0, 0, 5], fov: 60, near: 0.01, far: 2000 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0, xr: { enabled: true } }}
+      shadows={false}
+      style={{ position: 'fixed', inset: 0, zIndex: 0 }}
+    >
+      <MainSceneContent
+        stage={stage}
+        onRocketComplete={onRocketComplete}
+        onCountdown={onCountdown}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

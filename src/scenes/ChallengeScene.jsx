@@ -87,6 +87,7 @@ export default function ChallengeScene({
       <PerformanceMonitor onDecline={() => {}} />
 
       <OrbitControls
+        enabled={!xrSession}
         enablePan={false}
         enableZoom
         enableRotate

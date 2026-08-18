@@ -65,6 +65,7 @@ export default function BodyScene({
       <PerformanceMonitor onDecline={() => {}} />
 
       <OrbitControls
+        enabled={!xrSession}
         enablePan={false}
         enableZoom
         enableRotate

@@ -62,6 +62,7 @@ export default function OutbreakScene({
       <PerformanceMonitor onDecline={() => {}} />
 
       <OrbitControls
+        enabled={!xrSession}
         enablePan={false}
         enableZoom
         enableRotate

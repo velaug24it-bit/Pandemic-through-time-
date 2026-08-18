@@ -191,8 +191,8 @@ function EarthCanvasScene({
       />
 
       <Suspense fallback={<EarthFallback />}>
-        {/* Earth Group: in VR, placed at [0, 0, -4.0] so it floats in front of the Quest user */}
-        <group position={isVR ? [0, 0, -4.0] : [0, 0, 0]}>
+        {/* Earth Group: in VR, placed at [0, 1.2, -3.8] so it floats comfortably in front of the Quest user */}
+        <group position={isVR ? [0, 1.2, -3.8] : [0, 0, 0]}>
           <group ref={earthGroupRef}>
             <DigitalEarth
               autoRotate={false}
