@@ -9,7 +9,7 @@ import { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sparkles, AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
-import { ORGAN_SYSTEMS } from '../utils/constants';
+import { ORGAN_SYSTEMS, SCENE_STAGES } from '../utils/constants';
 
 import BloodstreamEnvironment from '../components/humanbody/BloodstreamEnvironment';
 import CellularWorld          from '../components/humanbody/CellularWorld';
@@ -90,6 +90,7 @@ export default function BodyScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.HUMAN_BODY_JOURNEY}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

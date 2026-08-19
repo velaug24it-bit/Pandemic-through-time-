@@ -10,6 +10,7 @@ import { useRef, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sparkles, AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
+import { SCENE_STAGES } from '../utils/constants';
 
 /** 3D Rotating Master Trophy Core */
 function MasterTrophyCore() {
@@ -115,6 +116,7 @@ export default function ChallengeScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.CHALLENGE_PLATFORM}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

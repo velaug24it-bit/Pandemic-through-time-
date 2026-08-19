@@ -16,6 +16,7 @@ import * as THREE from 'three';
 import AIOrb from '../components/ai/AIOrb';
 import Pathogen3DViewer from '../components/pathogens/Pathogen3DViewer';
 import WebXRManager from '../components/vr/WebXRManager';
+import { SCENE_STAGES } from '../utils/constants';
 
 /** 3D DNA Double Helix Exhibit */
 function DNAExhibit({ position = [3, 0.5, -2] }) {
@@ -206,6 +207,7 @@ export default function MuseumScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.HISTORICAL_MUSEUM}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

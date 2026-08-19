@@ -16,6 +16,7 @@ import DigitalEarth from '../components/earth/DigitalEarth';
 import CommBeams    from '../components/satellites/CommBeams';
 import AIOrb        from '../components/ai/AIOrb';
 import WebXRManager from '../components/vr/WebXRManager';
+import { SCENE_STAGES } from '../utils/constants';
 
 /** Command Center Theater Architecture */
 function CommandTheaterArchitecture() {
@@ -96,6 +97,7 @@ export default function OutbreakScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.OUTBREAK_SIMULATOR}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

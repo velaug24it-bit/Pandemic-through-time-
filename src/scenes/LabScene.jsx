@@ -26,6 +26,7 @@ import AIOrb         from '../components/ai/AIOrb';
 import WebXRManager  from '../components/vr/WebXRManager';
 import Covid19Model  from '../components/pathogens/Covid19Model';
 import DNAGenetics3D from '../components/humanbody/DNAGenetics3D';
+import { SCENE_STAGES } from '../utils/constants';
 
 /** Floating Autonomous Security Drone */
 function SecurityDrone({ position = [2.5, 2.0, -1] }) {
@@ -307,6 +308,7 @@ export default function LabScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.AI_LABORATORY}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

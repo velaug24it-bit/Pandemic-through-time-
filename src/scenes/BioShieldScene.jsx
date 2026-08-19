@@ -12,7 +12,7 @@ import { useRef, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sparkles, AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
-import { BIOSHIELD_BUILDINGS } from '../utils/constants';
+import { BIOSHIELD_BUILDINGS, SCENE_STAGES } from '../utils/constants';
 
 /** Autonomous 3D Medical Supply Drone flying curved city routes (Module 7) */
 function BioDrone3D({ pathOffset = 0, speed = 0.5 }) {
@@ -213,6 +213,7 @@ export default function BioShieldScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.BIOSHIELD_2050}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

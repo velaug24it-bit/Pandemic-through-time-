@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import DigitalEarth from '../components/earth/DigitalEarth';
 import CommBeams from '../components/satellites/CommBeams';
 import WebXRManager from '../components/vr/WebXRManager';
+import { SCENE_STAGES } from '../utils/constants';
 
 /** 3D Master Intelligence Command Theater Architecture */
 function CommandHubArchitecture() {
@@ -97,6 +98,7 @@ export default function IntelligenceScene({
         {/* WebXR Manager & VR Locomotion */}
         <WebXRManager
           session={xrSession}
+          currentStage={SCENE_STAGES.INTELLIGENCE_PLATFORM}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />

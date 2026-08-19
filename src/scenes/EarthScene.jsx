@@ -28,6 +28,7 @@ import SatelliteNetwork      from '../components/satellites/SatelliteNetwork';
 import CommBeams             from '../components/satellites/CommBeams';
 import WebXRManager          from '../components/vr/WebXRManager';
 import { latLonToVec3 }     from '../data/countries';
+import { SCENE_STAGES }     from '../utils/constants';
 
 /** Sun directional light rig */
 function SunLight() {
@@ -186,6 +187,7 @@ function EarthCanvasScene({
       {/* ── WebXR Manager (Active in VR) ── */}
       <WebXRManager
         session={xrSession}
+        currentStage={SCENE_STAGES.EARTH_VIEW}
         onNavigateStage={onNavigateStage}
         onExitVR={onExitVR}
       />

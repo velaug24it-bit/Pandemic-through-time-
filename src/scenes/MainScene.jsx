@@ -274,6 +274,7 @@ function MainSceneContent({ stage, onRocketComplete, onCountdown, xrSession, onN
         {/* WebXR Session & 3D World-Space Navigation Dock */}
         <WebXRManager
           session={xrSession}
+          currentStage={stage}
           onNavigateStage={onNavigateStage}
           onExitVR={onExitVR}
         />
