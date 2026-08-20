@@ -47,13 +47,54 @@ function CommandHubArchitecture() {
   );
 }
 
-export default function IntelligenceScene({
+import { Stars } from '@react-three/drei';
+
+export function IntelligenceCanvasScene({
   xrSession,
   onNavigateStage,
   onExitVR,
 }) {
   const earthRotRef = useRef(0);
+  const isVR = Boolean(xrSession);
 
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree Ambient & Spotlight Lighting */}
+      <ambientLight color="#001833" intensity={0.7} />
+      <directionalLight position={[8, 10, 6]} intensity={2.4} color="#c8e8ff" />
+      <pointLight position={[0, 4, 0]} color="#00c8ff" intensity={2.8} distance={20} />
+      <pointLight position={[0, -1, 0]} color="#7b2ff7" intensity={2.0} distance={14} />
+
+      {/* 360-degree Space Atmosphere */}
+      <Stars radius={100} depth={50} count={3500} factor={4} saturation={0.3} fade />
+      <CommandHubArchitecture />
+
+      {/* Central Holographic Digital Twin Earth — Centered in VR at eye-level [0, 1.2, -2.8] */}
+      <group position={isVR ? [0, 1.2, -2.8] : [0, 0.4, 0]}>
+        <DigitalEarth rotYRef={earthRotRef} autoRotate />
+        <CommBeams />
+      </group>
+
+      {/* Ambient Telemetry Sparkles in 360 degrees */}
+      <Sparkles count={180} scale={[24, 12, 24]} size={0.6} speed={0.05} opacity={0.4} color="#00c8ff" />
+      <Sparkles count={100} scale={[20, 10, 20]} size={0.8} speed={0.08} opacity={0.3} color="#7b2ff7" />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.INTELLIGENCE_PLATFORM}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
+export default function IntelligenceScene({
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   return (
     <Canvas
       camera={{ position: [0, 2.5, 8], fov: 60, near: 0.01, far: 1000 }}
@@ -75,34 +116,11 @@ export default function IntelligenceScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Ambient & Spotlight Lighting */}
-        <ambientLight color="#001833" intensity={0.6} />
-        <directionalLight position={[8, 10, 6]} intensity={2.2} color="#c8e8ff" />
-        <pointLight position={[0, 4, 0]} color="#00c8ff" intensity={2.5} distance={18} />
-        <pointLight position={[0, -1, 0]} color="#7b2ff7" intensity={1.8} distance={12} />
-
-        {/* Command Hub Floor & Wall Architecture */}
-        <CommandHubArchitecture />
-
-        {/* Central Holographic Digital Twin Earth */}
-        <group position={[0, 0.4, 0]}>
-          <DigitalEarth rotYRef={earthRotRef} autoRotate />
-          <CommBeams />
-        </group>
-
-        {/* Ambient Telemetry Sparkles */}
-        <Sparkles count={180} scale={[24, 12, 24]} size={0.6} speed={0.05} opacity={0.4} color="#00c8ff" />
-        <Sparkles count={100} scale={[20, 10, 20]} size={0.8} speed={0.08} opacity={0.3} color="#7b2ff7" />
-        
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.INTELLIGENCE_PLATFORM}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <IntelligenceCanvasScene
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

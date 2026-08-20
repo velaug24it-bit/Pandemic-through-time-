@@ -146,6 +146,71 @@ function FuturePortalDoor() {
   );
 }
 
+import { Stars } from '@react-three/drei';
+
+/** Inner 3D Content Component for Museum Scene */
+export function MuseumSceneContent({
+  currentPandemic,
+  viewMode = 'normal',
+  wireframe = false,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
+  const isVR = Boolean(xrSession);
+
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree Ambient Lighting */}
+      <ambientLight color="#0a1a2a" intensity={0.6} />
+      <directionalLight position={[6, 8, 4]} intensity={2.0} color="#e0f0ff" />
+      <pointLight position={[0, 4, 0]} color="#00c8ff" intensity={2.5} distance={18} />
+
+      {/* 360-degree Gallery Environment & Starfield */}
+      <Stars radius={100} depth={50} count={4000} factor={4} saturation={0.3} fade />
+      <MuseumArchitecture />
+
+      {/* Primary 3D Pathogen Viewer — Centered directly in front of the VR user at eye-level [0, 1.2, -2.5] */}
+      <group position={isVR ? [0, 0.4, 0] : [0, 0, 0]}>
+        <Pathogen3DViewer
+          pandemic={currentPandemic}
+          viewMode={viewMode}
+          wireframe={wireframe}
+          position={isVR ? [0, 1.2, -2.5] : [-2.5, 0.8, -2.5]}
+        />
+
+        {/* Holographic Pedestal under Centered Pathogen in VR */}
+        {isVR && (
+          <mesh position={[0, 0.1, -2.5]}>
+            <cylinderGeometry args={[0.9, 1.1, 0.2, 32]} />
+            <meshStandardMaterial color="#00c8ff" emissive="#00c8ff" emissiveIntensity={0.8} transparent opacity={0.6} wireframe />
+          </mesh>
+        )}
+
+        {/* 3D DNA Helix Exhibit */}
+        <DNAExhibit position={isVR ? [2.2, 1.1, -2.2] : [2.8, 0.6, -2.5]} />
+
+        {/* AI Orb Assistant ARIA */}
+        <AIOrb position={isVR ? [0, 2.1, -2.2] : [0, 0.5, -1.0]} />
+
+        {/* Future Portal */}
+        <FuturePortalDoor />
+      </group>
+
+      {/* Ambient dust sparkles in 360 degrees */}
+      <Sparkles count={180} scale={[25, 12, 25]} size={0.6} speed={0.04} opacity={0.3} color="#00c8ff" />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.HISTORICAL_MUSEUM}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
 export default function MuseumScene({
   currentPandemic,
   viewMode = 'normal',
@@ -175,43 +240,14 @@ export default function MuseumScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Lights */}
-        <ambientLight color="#0a1a2a" intensity={0.4} />
-        <directionalLight position={[6, 8, 4]} intensity={1.8} color="#e0f0ff" />
-        <pointLight position={[0, 3, 0]} color="#00c8ff" intensity={2} distance={15} />
-
-        {/* Museum architecture */}
-        <MuseumArchitecture />
-
-        {/* Unique 3D Pathogen Model Exhibit */}
-        <Pathogen3DViewer
-          pandemic={currentPandemic}
-          viewMode={viewMode}
-          wireframe={wireframe}
-          position={[-2.5, 0.8, -2.5]}
-        />
-
-        {/* 3D DNA Helix Exhibit */}
-        <DNAExhibit position={[2.8, 0.6, -2.5]} />
-
-        {/* AI Orb Assistant ARIA */}
-        <AIOrb position={[0, 0.5, -1.0]} />
-
-        {/* Future Portal */}
-        <FuturePortalDoor />
-
-        {/* Ambient dust sparkles */}
-        <Sparkles count={120} scale={[20, 10, 20]} size={0.5} speed={0.04} opacity={0.25} color="#00c8ff" />
-        
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.HISTORICAL_MUSEUM}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <MuseumSceneContent
+        currentPandemic={currentPandemic}
+        viewMode={viewMode}
+        wireframe={wireframe}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

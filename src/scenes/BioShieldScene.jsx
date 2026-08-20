@@ -154,6 +154,59 @@ function CityBuildings({ onSelectBuilding, selectedBuildingId }) {
 
 import WebXRManager from '../components/vr/WebXRManager';
 
+import { Stars } from '@react-three/drei';
+
+export function BioShieldCanvasScene({
+  isNight = false,
+  selectedBuildingId = 'smarthospital',
+  onSelectBuilding,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
+  const isVR = Boolean(xrSession);
+
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree Dynamic Day/Night Lighting */}
+      <ambientLight color={isNight ? '#003366' : '#cceeff'} intensity={isNight ? 0.5 : 0.9} />
+      <directionalLight
+        position={isNight ? [-6, 8, -4] : [8, 12, 6]}
+        intensity={isNight ? 1.2 : 2.6}
+        color={isNight ? '#00c8ff' : '#ffffff'}
+      />
+      <pointLight position={[0, 6, 0]} color="#00ff9d" intensity={2.5} distance={22} />
+
+      {/* 360-degree Sky & Starfield */}
+      <Stars radius={100} depth={50} count={3500} factor={4} saturation={0.3} fade />
+
+      {/* 3D Smart City Architecture & Digital Twin — Positioned in VR centered in front of user [0, -0.4, -4.5] */}
+      <group position={isVR ? [0, -0.4, -4.5] : [0, 0, 0]}>
+        <CityBuildings onSelectBuilding={onSelectBuilding} selectedBuildingId={selectedBuildingId} />
+
+        {/* Autonomous 3D Medical Drones */}
+        <BioDrone3D pathOffset={0} speed={0.4} />
+        <BioDrone3D pathOffset={Math.PI} speed={0.5} />
+
+        {/* Hospital Disinfection Robots */}
+        <BioRobot3D position={[-1.5, -1.3, 1.8]} />
+        <BioRobot3D position={[2.0, -1.3, -1.2]} />
+      </group>
+
+      {/* Sparkles Particle Atmosphere in 360 degrees */}
+      <Sparkles count={180} scale={[25, 12, 25]} size={0.6} speed={0.05} opacity={0.4} color="#00ff9d" />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.BIOSHIELD_2050}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
 export default function BioShieldScene({
   isNight = false,
   selectedBuildingId = 'smarthospital',
@@ -186,38 +239,14 @@ export default function BioShieldScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Dynamic Day/Night Lighting */}
-        <ambientLight color={isNight ? '#003366' : '#cceeff'} intensity={isNight ? 0.4 : 0.8} />
-        <directionalLight
-          position={isNight ? [-6, 8, -4] : [8, 12, 6]}
-          intensity={isNight ? 1.0 : 2.5}
-          color={isNight ? '#00c8ff' : '#ffffff'}
-        />
-        <pointLight position={[0, 6, 0]} color="#00ff9d" intensity={2} distance={20} />
-
-        {/* 3D Smart City Architecture & Digital Twin */}
-        <CityBuildings onSelectBuilding={onSelectBuilding} selectedBuildingId={selectedBuildingId} />
-
-        {/* Autonomous 3D Medical Drones (Module 7) */}
-        <BioDrone3D pathOffset={0} speed={0.4} />
-        <BioDrone3D pathOffset={Math.PI} speed={0.5} />
-
-        {/* Hospital Disinfection Robots (Module 8) */}
-        <BioRobot3D position={[-1.5, -1.3, 1.8]} />
-        <BioRobot3D position={[2.0, -1.3, -1.2]} />
-
-        {/* Sparkles Particle Atmosphere */}
-        <Sparkles count={180} scale={[25, 12, 25]} size={0.6} speed={0.05} opacity={0.4} color="#00ff9d" />
-
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.BIOSHIELD_2050}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <BioShieldCanvasScene
+        isNight={isNight}
+        selectedBuildingId={selectedBuildingId}
+        onSelectBuilding={onSelectBuilding}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

@@ -69,6 +69,45 @@ function ChallengeTheaterArchitecture() {
 
 import WebXRManager from '../components/vr/WebXRManager';
 
+import { Stars } from '@react-three/drei';
+
+export function ChallengeCanvasScene({
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
+  const isVR = Boolean(xrSession);
+
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree Theater Lighting */}
+      <ambientLight color="#120628" intensity={0.7} />
+      <directionalLight position={[6, 8, 4]} intensity={2.4} color="#d8b4ff" />
+      <pointLight position={[0, 4, 0]} color="#7b2ff7" intensity={2.8} distance={18} />
+
+      {/* 360-degree Space Atmosphere */}
+      <Stars radius={100} depth={50} count={3500} factor={4} saturation={0.4} fade />
+      <ChallengeTheaterArchitecture />
+
+      {/* 3D Rotating Master Trophy Core — Centered in VR at eye-level [0, 1.2, -2.6] */}
+      <group position={isVR ? [0, 0.4, -2.6] : [0, 0, 0]}>
+        <MasterTrophyCore />
+      </group>
+
+      {/* Floating Particles Atmosphere in 360 degrees */}
+      <Sparkles count={180} scale={[24, 12, 24]} size={0.65} speed={0.06} opacity={0.4} color="#7b2ff7" />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.CHALLENGE_PLATFORM}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
 export default function ChallengeScene({
   xrSession,
   onNavigateStage,
@@ -98,29 +137,11 @@ export default function ChallengeScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Theater Lighting */}
-        <ambientLight color="#120628" intensity={0.6} />
-        <directionalLight position={[6, 8, 4]} intensity={2.2} color="#d8b4ff" />
-        <pointLight position={[0, 4, 0]} color="#7b2ff7" intensity={2.5} distance={16} />
-
-        {/* 3D Challenge Theater Floor & Wall */}
-        <ChallengeTheaterArchitecture />
-
-        {/* 3D Rotating Master Trophy Core */}
-        <MasterTrophyCore />
-
-        {/* Floating Particles Atmosphere */}
-        <Sparkles count={180} scale={[24, 12, 24]} size={0.65} speed={0.06} opacity={0.4} color="#7b2ff7" />
-
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.CHALLENGE_PLATFORM}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <ChallengeCanvasScene
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

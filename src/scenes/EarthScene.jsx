@@ -107,7 +107,7 @@ function EarthFallback() {
 }
 
 /** Inner canvas scene */
-function EarthCanvasScene({
+export function EarthCanvasScene({
   autoRotate, showShield, showRoutes, showOrbits,
   selectedCountry,
   onCountryHover, onCountryClick,

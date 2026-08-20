@@ -139,7 +139,7 @@ function SceneFallback() {
 }
 
 /** Inner Scene Content with VR state awareness */
-function MainSceneContent({ stage, onRocketComplete, onCountdown, xrSession, onNavigateStage, onExitVR }) {
+export function MainSceneContent({ stage, onRocketComplete, onCountdown, xrSession, onNavigateStage, onExitVR }) {
   const { gl } = useThree();
   const isVR = gl?.xr?.isPresenting || Boolean(xrSession);
 

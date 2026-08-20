@@ -20,7 +20,9 @@ import DNAGenetics3D          from '../components/humanbody/DNAGenetics3D';
 
 import WebXRManager from '../components/vr/WebXRManager';
 
-export default function BodyScene({
+import { Stars } from '@react-three/drei';
+
+export function BodySceneContent({
   organId = 'bloodstream',
   viewMode = 'bloodstream',
   infectionStep = 0,
@@ -28,6 +30,7 @@ export default function BodyScene({
   onNavigateStage,
   onExitVR,
 }) {
+  const isVR = Boolean(xrSession);
   const currentOrgan = useMemo(() => {
     return ORGAN_SYSTEMS.find(o => o.id === organId) || ORGAN_SYSTEMS[0];
   }, [organId]);
@@ -50,6 +53,47 @@ export default function BodyScene({
         return <BloodstreamEnvironment organId={organId} />;
     }
   };
+
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree Microscopic Organic Lighting */}
+      <ambientLight color={currentOrgan.color} intensity={0.7} />
+      <directionalLight position={[4, 6, 4]} intensity={2.2} color="#e0f0ff" />
+      <pointLight position={[0, 0, 0]} color={currentOrgan.color} intensity={2.5} distance={16} />
+
+      {/* 360-degree Cellular Space Background */}
+      <Stars radius={90} depth={40} count={3000} factor={4} saturation={0.5} fade />
+
+      {/* Dynamic 3D Microscopic World — Centered in VR at eye level [0, 1.2, -2.5] */}
+      <group position={isVR ? [0, 1.2, -2.5] : [0, 0, 0]}>
+        {render3DContent()}
+      </group>
+
+      {/* Flowing plasma dust sparkles in 360 degrees */}
+      <Sparkles count={180} scale={[24, 24, 24]} size={0.65} speed={0.08} opacity={0.4} color={currentOrgan.color} />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.HUMAN_BODY_JOURNEY}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
+export default function BodyScene({
+  organId = 'bloodstream',
+  viewMode = 'bloodstream',
+  infectionStep = 0,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
+  const currentOrgan = useMemo(() => {
+    return ORGAN_SYSTEMS.find(o => o.id === organId) || ORGAN_SYSTEMS[0];
+  }, [organId]);
 
   return (
     <Canvas
@@ -75,26 +119,14 @@ export default function BodyScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Dynamic Microscopic Lighting adapting to selected organ */}
-        <ambientLight color={currentOrgan.color} intensity={0.6} />
-        <directionalLight position={[4, 6, 4]} intensity={2.0} color="#e0f0ff" />
-        <pointLight position={[0, 0, 0]} color={currentOrgan.color} intensity={2.0} distance={15} />
-
-        {/* Dynamic 3D Microscopic World */}
-        {render3DContent()}
-
-        {/* Flowing plasma dust sparkles matching organ color */}
-        <Sparkles count={160} scale={[18, 18, 18]} size={0.6} speed={0.08} opacity={0.4} color={currentOrgan.color} />
-
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.HUMAN_BODY_JOURNEY}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <BodySceneContent
+        organId={organId}
+        viewMode={viewMode}
+        infectionStep={infectionStep}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

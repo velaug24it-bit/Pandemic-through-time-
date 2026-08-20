@@ -220,12 +220,17 @@ function ResearchDashboard3D() {
   );
 }
 
-export default function LabScene({
+import { Stars } from '@react-three/drei';
+
+/** Inner 3D Content Component for Lab Scene */
+export function LabSceneContent({
   activeStationId = 'analysis',
   xrSession,
   onNavigateStage,
   onExitVR,
 }) {
+  const isVR = Boolean(xrSession);
+
   const renderWorkstation3DModel = () => {
     switch (activeStationId) {
       case 'analysis':
@@ -236,7 +241,7 @@ export default function LabScene({
         return <Covid19Model viewMode="crossSection" />;
       case 'diagnostics':
         return (
-          <group position={[0, 0.5, 0]}>
+          <group position={isVR ? [0, 1.25, -2.2] : [0, 0.5, 0]}>
             <mesh>
               <icosahedronGeometry args={[0.85, 2]} />
               <meshStandardMaterial color="#00c8ff" emissive="#00c8ff" emissiveIntensity={1.2} wireframe />
@@ -254,6 +259,56 @@ export default function LabScene({
     }
   };
 
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree High-Tech Lab Lighting */}
+      <ambientLight color="#061628" intensity={0.6} />
+      <directionalLight position={[6, 8, 4]} intensity={2.2} color="#e0f0ff" />
+      <pointLight position={[0, 4, 0]} color="#00c8ff" intensity={2.2} distance={16} />
+
+      {/* 360-degree Cleanroom Environment & Space Sky */}
+      <Stars radius={100} depth={50} count={3500} factor={4} saturation={0.3} fade />
+      <RealWorldLabArchitecture />
+
+      <group position={isVR ? [0, 0, 0] : [0, 0, 0]}>
+        {/* Holographic Workspace Table — Centered in VR at [0, 0.1, -2.2] */}
+        <HoloTable3D position={isVR ? [0, 0.1, -2.2] : [0, -1.1, 0]} />
+
+        {/* Articulated Robotic Sample Arm operating on HoloTable */}
+        <RoboticArm3D position={isVR ? [-1.4, 0.7, -2.0] : [-2.5, -0.5, -1]} />
+
+        {/* Autonomous Security Drone */}
+        <SecurityDrone position={isVR ? [1.5, 1.8, -2.0] : [2.5, 1.8, -1]} />
+
+        {/* AI Orb Assistant ARIA */}
+        <AIOrb position={isVR ? [0, 1.9, -2.2] : [0, 1.6, -1.2]} />
+
+        {/* Active Workstation 3D Model — Centered floating directly on HoloTable at eye-level [0, 1.25, -2.2] */}
+        <group position={isVR ? [0, 0.75, -2.2] : [0, 0, 0]}>
+          {renderWorkstation3DModel()}
+        </group>
+      </group>
+
+      {/* Floating Bio-Particles in 360 degrees */}
+      <Sparkles count={180} scale={[24, 12, 24]} size={0.6} speed={0.05} opacity={0.35} color="#00c8ff" />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.AI_LABORATORY}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
+export default function LabScene({
+  activeStationId = 'analysis',
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   return (
     <Canvas
       camera={{ position: [0, 1.2, 5.2], fov: 58, near: 0.01, far: 1000 }}
@@ -278,41 +333,12 @@ export default function LabScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Real-World High-Tech Lab Lighting */}
-        <ambientLight color="#061628" intensity={0.6} />
-        <directionalLight position={[6, 8, 4]} intensity={2.2} color="#e0f0ff" />
-        <pointLight position={[0, 4, 0]} color="#00c8ff" intensity={2.2} distance={16} />
-
-        {/* Real-World High-Tech Lab Architecture */}
-        <RealWorldLabArchitecture />
-
-        {/* Holographic Workspace Table */}
-        <HoloTable3D position={[0, -1.1, 0]} />
-
-        {/* Articulated Robotic Sample Arm */}
-        <RoboticArm3D position={[-2.5, -0.5, -1]} />
-
-        {/* Autonomous Security Drone */}
-        <SecurityDrone position={[2.5, 1.8, -1]} />
-
-        {/* AI Orb Assistant ARIA */}
-        <AIOrb position={[0, 1.6, -1.2]} />
-
-        {/* Active Workstation 3D Real-World Model */}
-        {renderWorkstation3DModel()}
-
-        {/* Floating Bio-Particles */}
-        <Sparkles count={150} scale={[20, 10, 20]} size={0.6} speed={0.05} opacity={0.35} color="#00c8ff" />
-
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.AI_LABORATORY}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <LabSceneContent
+        activeStationId={activeStationId}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }

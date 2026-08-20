@@ -24,15 +24,19 @@ import { useAudio } from './hooks/useAudio';
 import { HISTORICAL_PANDEMICS } from './data/historicalPandemics';
 import { SimulationEngine } from './utils/simulationEngine';
 
+import { Canvas } from '@react-three/fiber';
+import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
+import * as THREE from 'three';
+
 // Phase 1 UI & 3D imports
 import LoadingScreen from './components/ui/LoadingScreen';
 import MissionBriefing from './components/ui/MissionBriefing';
 import HUD from './components/ui/HUD';
 import MissionControl from './components/missioncontrol/MissionControl';
-import MainScene from './scenes/MainScene';
+import MainScene, { MainSceneContent } from './scenes/MainScene';
 
 // Phase 2 Interactive Earth imports
-import EarthScene from './scenes/EarthScene';
+import EarthScene, { EarthCanvasScene } from './scenes/EarthScene';
 import EarthHUD from './components/ui/EarthHUD';
 import SearchBar from './components/ui/SearchBar';
 import EarthControlBar from './components/ui/EarthControlBar';
@@ -45,7 +49,7 @@ import NationHistoryModal from './components/earth/NationHistoryModal';
 
 // Phase 3 Time Machine & Museum imports
 import TimeTravelOverlay from './components/timemachine/TimeTravelOverlay';
-import MuseumScene from './scenes/MuseumScene';
+import MuseumScene, { MuseumSceneContent } from './scenes/MuseumScene';
 import MuseumHUD from './components/museum/MuseumHUD';
 import PandemicGalleryDrawer from './components/museum/PandemicGalleryDrawer';
 import InteractiveTimelineSlider from './components/museum/InteractiveTimelineSlider';
@@ -55,14 +59,14 @@ import PathogenComparisonModal from './components/museum/PathogenComparisonModal
 
 // Phase 4 Human Body Journey imports
 import ShrinkTransitionOverlay from './components/humanbody/ShrinkTransitionOverlay';
-import BodyScene from './scenes/BodyScene';
+import BodyScene, { BodySceneContent } from './scenes/BodyScene';
 import BodyHUD from './components/humanbody/BodyHUD';
 import OrganSelectorBar from './components/humanbody/OrganSelectorBar';
 import InfectionControlPanel from './components/humanbody/InfectionControlPanel';
 import MicroscopicAIGuide from './components/humanbody/MicroscopicAIGuide';
 
 // Phase 5 AI Research Laboratory imports
-import LabScene from './scenes/LabScene';
+import LabScene, { LabSceneContent } from './scenes/LabScene';
 import LabHUD from './components/researchlab/LabHUD';
 import WorkstationSelectorBar from './components/researchlab/WorkstationSelectorBar';
 import PathogenAnalysisStation from './components/researchlab/PathogenAnalysisStation';
@@ -74,7 +78,7 @@ import VaccinePipelineCenter from './components/researchlab/VaccinePipelineCente
 import GlobalResearchDashboard from './components/researchlab/GlobalResearchDashboard';
 
 // Phase 6 Global Outbreak Simulator imports
-import OutbreakScene from './scenes/OutbreakScene';
+import OutbreakScene, { OutbreakCanvasScene } from './scenes/OutbreakScene';
 import GlobalMetricsHeader from './components/outbreak/GlobalMetricsHeader';
 import SimControlBar from './components/outbreak/SimControlBar';
 import PolicyDirectivePanel from './components/outbreak/PolicyDirectivePanel';
@@ -87,7 +91,7 @@ import LiveAnalyticsModal from './components/outbreak/LiveAnalyticsModal';
 import CountryOutbreakModal from './components/outbreak/CountryOutbreakModal';
 
 // Phase 7 BioShield 2050 Smart City imports
-import BioShieldScene from './scenes/BioShieldScene';
+import BioShieldScene, { BioShieldCanvasScene } from './scenes/BioShieldScene';
 import BioShieldHUD from './components/bioshield/BioShieldHUD';
 import DigitalTwinDrawer from './components/bioshield/DigitalTwinDrawer';
 import EmergencyActionPanel from './components/bioshield/EmergencyActionPanel';
@@ -98,7 +102,7 @@ import FinalHallOfKnowledgeModal from './components/bioshield/FinalHallOfKnowled
 import { BIOSHIELD_BUILDINGS, CHALLENGE_SCENARIOS } from './utils/constants';
 
 // Phase 8 Global Collaboration & Crisis Challenge imports
-import ChallengeScene from './scenes/ChallengeScene';
+import ChallengeScene, { ChallengeCanvasScene } from './scenes/ChallengeScene';
 import ChallengeHUD from './components/challenge/ChallengeHUD';
 import MissionSelectionModal from './components/challenge/MissionSelectionModal';
 import MissionRunnerModal from './components/challenge/MissionRunnerModal';
@@ -108,7 +112,7 @@ import MasterTimelineModal from './components/challenge/MasterTimelineModal';
 import GrandCertificateModal from './components/challenge/GrandCertificateModal';
 
 // Phase 9 Global Health Intelligence & Digital Twin Platform imports
-import IntelligenceScene from './scenes/IntelligenceScene';
+import IntelligenceScene, { IntelligenceCanvasScene } from './scenes/IntelligenceScene';
 import IntelligenceHUD from './components/intelligence/IntelligenceHUD';
 import DigitalTwinEarthModal from './components/intelligence/DigitalTwinEarthModal';
 import KnowledgeGraphModal from './components/intelligence/KnowledgeGraphModal';
@@ -459,109 +463,235 @@ export default function App() {
         onSessionEnd={() => setXrSession(null)}
       />
 
-      {/* ── Phase 1 MainScene Canvas (stages 2-6 or whenever in WebXR) ── */}
-      {(stage >= SCENE_STAGES.CINEMATIC_INTRO || Boolean(xrSession)) && !isEarthView && !isTimeTravel && !isMuseum && !isShrink && !isBodyJourney && !isAILab && !isOutbreakSim && !isBioShield && !isChallenge && !isIntelligence && (
-        <MainScene
-          stage={stage}
-          onRocketComplete={onRocketComplete}
-          onCountdown={setCountdown}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
-
-      {/* ── Phase 2 EarthScene Canvas (stage 7) ── */}
-      {isEarthView && (
-        <EarthScene
-          autoRotate={autoRotate}
-          showShield={showShield}
-          showRoutes={showRoutes}
-          showOrbits={showOrbits}
-          onCountryHover={() => { }}
-          onCountryClick={(country) => {
-            audio.missionBeep();
-            setSelectedCountry(country);
+      {/* ── PERSISTENT WEBXR CANVAS (Active during VR Session to prevent WebGL unmount/black screen hang) ── */}
+      {Boolean(xrSession) ? (
+        <Canvas
+          camera={{ position: [0, 1.5, 6], fov: 55, near: 0.01, far: 2000 }}
+          gl={{
+            antialias: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.1,
+            xr: { enabled: true },
           }}
-          earthRotYRef={earthRotYRef}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          shadows={false}
+          style={{ position: 'fixed', inset: 0, zIndex: 0 }}
+        >
+          <AdaptiveDpr pixelated />
+          <PerformanceMonitor onDecline={() => {}} />
 
-      {/* ── Phase 3 MuseumScene Canvas (stage 9) ── */}
-      {isMuseum && (
-        <MuseumScene
-          currentPandemic={activePandemic}
-          viewMode={viewMode}
-          wireframe={wireframe}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          {/* Phase 2 Earth Scene Content */}
+          {isEarthView && (
+            <EarthCanvasScene
+              autoRotate={autoRotate}
+              showShield={showShield}
+              showRoutes={showRoutes}
+              showOrbits={showOrbits}
+              onCountryHover={() => { }}
+              onCountryClick={(country) => {
+                audio.missionBeep();
+                setSelectedCountry(country);
+              }}
+              earthRotYRef={earthRotYRef}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
 
-      {/* ── Phase 4 BodyScene Canvas (stage 11) ── */}
-      {isBodyJourney && (
-        <BodyScene
-          organId={activeOrganId}
-          viewMode={bodyViewMode}
-          infectionStep={infectionStep}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          {/* Phase 3 Museum Scene Content */}
+          {isMuseum && (
+            <MuseumSceneContent
+              currentPandemic={activePandemic}
+              viewMode={viewMode}
+              wireframe={wireframe}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
 
-      {/* ── Phase 5 LabScene Canvas (stage 12) ── */}
-      {isAILab && (
-        <LabScene
-          activeStationId={activeStationId}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          {/* Phase 4 Body Scene Content */}
+          {isBodyJourney && (
+            <BodySceneContent
+              organId={activeOrganId}
+              viewMode={bodyViewMode}
+              infectionStep={infectionStep}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
 
-      {/* ── Phase 6 OutbreakScene Canvas (stage 13) ── */}
-      {isOutbreakSim && (
-        <OutbreakScene
-          isRunning={simRunning}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          {/* Phase 5 AI Lab Scene Content */}
+          {isAILab && (
+            <LabSceneContent
+              activeStationId={activeStationId}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
 
-      {/* ── Phase 7 BioShieldScene Canvas (stage 15) ── */}
-      {isBioShield && (
-        <BioShieldScene
-          isNight={isNight}
-          selectedBuildingId={selectedBuilding.id}
-          onSelectBuilding={setSelectedBuilding}
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          {/* Phase 6 Outbreak Simulator Content */}
+          {isOutbreakSim && (
+            <OutbreakCanvasScene
+              isRunning={simRunning}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
 
-      {/* ── Phase 8 ChallengeScene Canvas (stage 16) ── */}
-      {isChallenge && (
-        <ChallengeScene
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
-      )}
+          {/* Phase 7 BioShield Smart City Content */}
+          {isBioShield && (
+            <BioShieldCanvasScene
+              isNight={isNight}
+              selectedBuildingId={selectedBuilding.id}
+              onSelectBuilding={setSelectedBuilding}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
 
-      {/* ── Phase 9 IntelligenceScene Canvas (stage 17) ── */}
-      {isIntelligence && (
-        <IntelligenceScene
-          xrSession={xrSession}
-          onNavigateStage={goTo}
-          onExitVR={() => setXrSession(null)}
-        />
+          {/* Phase 8 Challenge Scene Content */}
+          {isChallenge && (
+            <ChallengeCanvasScene
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* Phase 9 Intelligence Scene Content */}
+          {isIntelligence && (
+            <IntelligenceCanvasScene
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* Fallback Main Space Scene Content */}
+          {(!isEarthView && !isMuseum && !isBodyJourney && !isAILab && !isOutbreakSim && !isBioShield && !isChallenge && !isIntelligence) && (
+            <MainSceneContent
+              stage={stage}
+              onRocketComplete={onRocketComplete}
+              onCountdown={setCountdown}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+        </Canvas>
+      ) : (
+        /* STANDARD INDIVIDUAL DESKTOP CANVASES (When NOT in VR) */
+        <>
+          {/* ── Phase 1 MainScene Canvas (stages 2-6) ── */}
+          {stage >= SCENE_STAGES.CINEMATIC_INTRO && !isEarthView && !isTimeTravel && !isMuseum && !isShrink && !isBodyJourney && !isAILab && !isOutbreakSim && !isBioShield && !isChallenge && !isIntelligence && (
+            <MainScene
+              stage={stage}
+              onRocketComplete={onRocketComplete}
+              onCountdown={setCountdown}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 2 EarthScene Canvas (stage 7) ── */}
+          {isEarthView && (
+            <EarthScene
+              autoRotate={autoRotate}
+              showShield={showShield}
+              showRoutes={showRoutes}
+              showOrbits={showOrbits}
+              onCountryHover={() => { }}
+              onCountryClick={(country) => {
+                audio.missionBeep();
+                setSelectedCountry(country);
+              }}
+              earthRotYRef={earthRotYRef}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 3 MuseumScene Canvas (stage 9) ── */}
+          {isMuseum && (
+            <MuseumScene
+              currentPandemic={activePandemic}
+              viewMode={viewMode}
+              wireframe={wireframe}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 4 BodyScene Canvas (stage 11) ── */}
+          {isBodyJourney && (
+            <BodyScene
+              organId={activeOrganId}
+              viewMode={bodyViewMode}
+              infectionStep={infectionStep}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 5 LabScene Canvas (stage 12) ── */}
+          {isAILab && (
+            <LabScene
+              activeStationId={activeStationId}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 6 OutbreakScene Canvas (stage 13) ── */}
+          {isOutbreakSim && (
+            <OutbreakScene
+              isRunning={simRunning}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 7 BioShieldScene Canvas (stage 15) ── */}
+          {isBioShield && (
+            <BioShieldScene
+              isNight={isNight}
+              selectedBuildingId={selectedBuilding.id}
+              onSelectBuilding={setSelectedBuilding}
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 8 ChallengeScene Canvas (stage 16) ── */}
+          {isChallenge && (
+            <ChallengeScene
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+
+          {/* ── Phase 9 IntelligenceScene Canvas (stage 17) ── */}
+          {isIntelligence && (
+            <IntelligenceScene
+              xrSession={xrSession}
+              onNavigateStage={goTo}
+              onExitVR={() => setXrSession(null)}
+            />
+          )}
+        </>
       )}
 
       {/* ── 1. Premium Loading Screen ── */}

@@ -44,14 +44,57 @@ function CommandTheaterArchitecture() {
   );
 }
 
-export default function OutbreakScene({
+import { Stars } from '@react-three/drei';
+
+export function OutbreakCanvasScene({
   isRunning = true,
   xrSession,
   onNavigateStage,
   onExitVR,
 }) {
   const earthRotRef = useRef(0);
+  const isVR = Boolean(xrSession);
 
+  return (
+    <Suspense fallback={null}>
+      {/* 360-degree Theater Lights */}
+      <ambientLight color="#1a0008" intensity={0.7} />
+      <directionalLight position={[6, 8, 4]} intensity={2.2} color="#ff88a0" />
+      <pointLight position={[0, 4, 0]} color="#ff3860" intensity={2.5} distance={18} />
+
+      {/* 360-degree Space Atmosphere */}
+      <Stars radius={100} depth={50} count={3500} factor={4} saturation={0.3} fade />
+      <CommandTheaterArchitecture />
+
+      {/* 3D Central Holographic Earth — Centered in VR at eye-level [0, 1.2, -2.8] */}
+      <group position={isVR ? [0, 1.2, -2.8] : [0, 0.2, 0]}>
+        <DigitalEarth rotYRef={earthRotRef} autoRotate={isRunning} />
+        <CommBeams />
+      </group>
+
+      {/* AI Advisor ARIA Hologram */}
+      <AIOrb position={isVR ? [1.8, 1.5, -2.2] : [3.2, 1.5, -1]} />
+
+      {/* Red Emergency Particles in 360 degrees */}
+      <Sparkles count={180} scale={[24, 12, 24]} size={0.65} speed={0.06} opacity={0.35} color="#ff3860" />
+
+      {/* WebXR Manager & VR Locomotion */}
+      <WebXRManager
+        session={xrSession}
+        currentStage={SCENE_STAGES.OUTBREAK_SIMULATOR}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
+    </Suspense>
+  );
+}
+
+export default function OutbreakScene({
+  isRunning = true,
+  xrSession,
+  onNavigateStage,
+  onExitVR,
+}) {
   return (
     <Canvas
       camera={{ position: [0, 2, 7], fov: 60, near: 0.01, far: 1000 }}
@@ -73,35 +116,12 @@ export default function OutbreakScene({
         zoomSpeed={0.6}
       />
 
-      <Suspense fallback={null}>
-        {/* Lights */}
-        <ambientLight color="#1a0008" intensity={0.6} />
-        <directionalLight position={[6, 8, 4]} intensity={2.0} color="#ff88a0" />
-        <pointLight position={[0, 4, 0]} color="#ff3860" intensity={2} distance={15} />
-
-        {/* Command Theater Floor & Walls */}
-        <CommandTheaterArchitecture />
-
-        {/* 3D Central Holographic Earth */}
-        <group position={[0, 0.2, 0]}>
-          <DigitalEarth rotYRef={earthRotRef} autoRotate={isRunning} />
-          <CommBeams />
-        </group>
-
-        {/* AI Advisor ARIA Hologram */}
-        <AIOrb position={[3.2, 1.5, -1]} />
-
-        {/* Red Emergency Particles */}
-        <Sparkles count={150} scale={[20, 10, 20]} size={0.6} speed={0.06} opacity={0.35} color="#ff3860" />
-
-        {/* WebXR Manager & VR Locomotion */}
-        <WebXRManager
-          session={xrSession}
-          currentStage={SCENE_STAGES.OUTBREAK_SIMULATOR}
-          onNavigateStage={onNavigateStage}
-          onExitVR={onExitVR}
-        />
-      </Suspense>
+      <OutbreakCanvasScene
+        isRunning={isRunning}
+        xrSession={xrSession}
+        onNavigateStage={onNavigateStage}
+        onExitVR={onExitVR}
+      />
     </Canvas>
   );
 }
