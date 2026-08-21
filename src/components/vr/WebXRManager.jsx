@@ -311,106 +311,94 @@ export default function WebXRManager({
 
   return (
     <group>
-      {/* ── 3D World-Space Sequential Command Cockpit (at z = -1.8m, angled up slightly) ── */}
-      <group position={[0, 1.15, -1.8]} rotation={[-0.1, 0, 0]}>
-        {/* Panel Backdrop */}
-        <mesh position={[0, 0, -0.02]}>
-          <planeGeometry args={[2.5, 0.95]} />
-          <meshBasicMaterial color="#010614" transparent opacity={0.92} />
-        </mesh>
-        {/* Panel Border Frame */}
+      {/* ── Sleek 3D Ergonomic Action Cockpit Dock (at waist height y = 0.72m, z = -1.35m, tilted 18° up) ── */}
+      <group position={[0, 0.72, -1.35]} rotation={[-0.30, 0, 0]}>
+        {/* Subtle Glassmorphic Dock Backdrop */}
         <mesh position={[0, 0, -0.015]}>
-          <planeGeometry args={[2.52, 0.97]} />
-          <meshBasicMaterial color="#00c8ff" wireframe transparent opacity={0.4} />
+          <planeGeometry args={[1.50, 0.32]} />
+          <meshBasicMaterial color="#020a1c" transparent opacity={0.82} />
+        </mesh>
+        {/* Glowing Neon Border */}
+        <mesh position={[0, 0, -0.01]}>
+          <planeGeometry args={[1.52, 0.34]} />
+          <meshBasicMaterial color="#00c8ff" wireframe transparent opacity={0.5} />
         </mesh>
 
-        {/* ── 1. Top Header Banner ── */}
-        <mesh position={[0, 0.38, 0]}>
-          <planeGeometry args={[2.4, 0.14]} />
+        {/* ── 1. Top Active Section Status Banner ── */}
+        <mesh position={[0, 0.11, 0]}>
+          <planeGeometry args={[1.44, 0.08]} />
           <meshBasicMaterial map={headerTex} transparent opacity={0.98} />
         </mesh>
 
-        {/* ── 2. Primary Sequential Navigation Action Row ── */}
+        {/* ── 2. Primary Navigation Controls Row ── */}
         {/* Prev Phase Button */}
         <mesh
-          position={[-0.72, 0.20, hoveredButtonKey === 'prev' ? 0.02 : 0]}
+          position={[-0.48, -0.04, hoveredButtonKey === 'prev' ? 0.02 : 0]}
           scale={hoveredButtonKey === 'prev' ? [1.06, 1.06, 1] : [1, 1, 1]}
           ref={(m) => registerButton('prev', m, () => handleNav(prevPhase.id))}
           onClick={() => handleNav(prevPhase.id)}
         >
-          <planeGeometry args={[0.44, 0.15]} />
+          <planeGeometry args={[0.26, 0.10]} />
           <meshBasicMaterial map={prevBtnTex} transparent opacity={0.96} />
         </mesh>
 
-        {/* Large Highlighted "NEXT PHASE ▶" Action Button */}
+        {/* Highlighted "NEXT SECTION ▶" Primary Action Button */}
         <mesh
-          position={[0.0, 0.20, hoveredButtonKey === 'next' ? 0.03 : 0]}
+          position={[-0.08, -0.04, hoveredButtonKey === 'next' ? 0.03 : 0]}
           scale={hoveredButtonKey === 'next' ? [1.08, 1.08, 1] : [1, 1, 1]}
           ref={(m) => registerButton('next', m, () => handleNav(nextPhase.id))}
           onClick={() => handleNav(nextPhase.id)}
         >
-          <planeGeometry args={[0.92, 0.15]} />
+          <planeGeometry args={[0.50, 0.11]} />
           <meshBasicMaterial map={nextBtnTex} transparent opacity={0.98} />
+        </mesh>
+
+        {/* Sections Ribbon Menu Toggle */}
+        <mesh
+          position={[0.28, -0.04, hoveredButtonKey === 'sections_toggle' ? 0.02 : 0]}
+          scale={hoveredButtonKey === 'sections_toggle' ? [1.06, 1.06, 1] : [1, 1, 1]}
+          ref={(m) => registerButton('sections_toggle', m, () => handleNav(nextPhase.id))}
+          onClick={() => handleNav(nextPhase.id)}
+        >
+          <planeGeometry args={[0.20, 0.10]} />
+          <meshBasicMaterial
+            map={createButtonCanvasTexture('🌐 SECTIONS', 'ALL 9 PHASES', '#a855f7', 'rgba(25,10,45,0.95)')}
+            transparent
+            opacity={0.96}
+          />
         </mesh>
 
         {/* Exit VR Button */}
         <mesh
-          position={[0.72, 0.20, hoveredButtonKey === 'exit' ? 0.02 : 0]}
+          position={[0.55, -0.04, hoveredButtonKey === 'exit' ? 0.02 : 0]}
           scale={hoveredButtonKey === 'exit' ? [1.06, 1.06, 1] : [1, 1, 1]}
           ref={(m) => registerButton('exit', m, handleExit)}
           onClick={handleExit}
         >
-          <planeGeometry args={[0.44, 0.15]} />
+          <planeGeometry args={[0.24, 0.10]} />
           <meshBasicMaterial map={exitBtnTex} transparent opacity={0.96} />
         </mesh>
 
-        {/* ── 3. Ordered 9-Phase Storyline Grid (Row 1: Phases 1 to 5) ── */}
-        <group position={[0, 0.03, 0]}>
-          {phaseTextures.slice(0, 5).map((p, idx) => {
-            const posX = (idx - 2) * 0.47;
+        {/* ── 3. Sleek Spatial Arc for Direct Section Switching ── */}
+        <group position={[0, -0.22, 0]}>
+          {phaseTextures.map((p, idx) => {
+            const posX = (idx - 4) * 0.16;
             const isHovered = hoveredButtonKey === `phase_${p.id}`;
             const isCurrent = p.id === currentStage;
             return (
               <mesh
                 key={p.id}
                 position={[posX, 0, isHovered ? 0.02 : 0]}
-                scale={isHovered ? [1.06, 1.06, 1] : isCurrent ? [1.02, 1.02, 1] : [1, 1, 1]}
+                scale={isHovered ? [1.08, 1.08, 1] : isCurrent ? [1.04, 1.04, 1] : [0.95, 0.95, 1]}
                 ref={(m) => registerButton(`phase_${p.id}`, m, () => handleNav(p.id))}
                 onClick={() => handleNav(p.id)}
               >
-                <planeGeometry args={[0.43, 0.14]} />
-                <meshBasicMaterial map={p.tex} transparent opacity={isCurrent ? 1.0 : 0.9} />
+                <planeGeometry args={[0.15, 0.08]} />
+                <meshBasicMaterial map={p.tex} transparent opacity={isCurrent ? 1.0 : 0.85} />
               </mesh>
             );
           })}
         </group>
-
-        {/* ── 4. Ordered 9-Phase Storyline Grid (Row 2: Phases 6 to 9) ── */}
-        <group position={[0, -0.14, 0]}>
-          {phaseTextures.slice(5, 9).map((p, idx) => {
-            const posX = (idx - 1.5) * 0.47;
-            const isHovered = hoveredButtonKey === `phase_${p.id}`;
-            const isCurrent = p.id === currentStage;
-            return (
-              <mesh
-                key={p.id}
-                position={[posX, 0, isHovered ? 0.02 : 0]}
-                scale={isHovered ? [1.06, 1.06, 1] : isCurrent ? [1.02, 1.02, 1] : [1, 1, 1]}
-                ref={(m) => registerButton(`phase_${p.id}`, m, () => handleNav(p.id))}
-                onClick={() => handleNav(p.id)}
-              >
-                <planeGeometry args={[0.43, 0.14]} />
-                <meshBasicMaterial map={p.tex} transparent opacity={isCurrent ? 1.0 : 0.9} />
-              </mesh>
-            );
-          })}
-        </group>
-
-        {/* ── 5. Bottom Instructions Bar ── */}
-        <mesh position={[0, -0.32, 0]}>
-          <planeGeometry args={[2.3, 0.08]} />
-          <meshBasicMaterial color="#001830" transparent opacity={0.8} />
-        </mesh>
       </group>
     </group>
   );

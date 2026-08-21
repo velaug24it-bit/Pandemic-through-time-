@@ -158,117 +158,101 @@ export function MainSceneContent({ stage, onRocketComplete, onCountdown, xrSessi
 
       <Suspense fallback={<SceneFallback />}>
         {/* ══════════════════════════════════════════════════════════════
-            MODE A: TRUE 360-DEGREE IMMERSIVE VR WORLD (Meta Quest 3)
+            AUTHENTIC 360-DEGREE SPACE COMMAND CENTER ENVIRONMENT
             ══════════════════════════════════════════════════════════════ */}
-        {isVR ? (
-          <VR360SpatialWorld onNavigateStage={onNavigateStage} />
-        ) : (
-          /* ══════════════════════════════════════════════════════════════
-             MODE B: CINEMATIC DESKTOP PIPELINE (Preserved for Monitor)
-             ══════════════════════════════════════════════════════════════ */
-          <>
-            <ambientLight color="#88aacc" intensity={0.6} />
-            <directionalLight position={[6, 12, 6]} intensity={1.8} color="#ffffff" />
+        <ambientLight color="#88aacc" intensity={0.7} />
+        <directionalLight position={[6, 12, 6]} intensity={2.0} color="#ffffff" />
 
-            {/* Space environment */}
-            <SpaceEnvironment visible={isFlight} />
+        {/* Space environment in 360 degrees */}
+        <SpaceEnvironment visible={isFlight || isCommand || isStation || isVR} />
 
-            {/* Rocket launch sequence */}
-            {isRocket && (
-              <RocketLaunch onComplete={onRocketComplete} onCountdown={onCountdown} />
-            )}
+        {/* Rocket launch sequence */}
+        {isRocket && (
+          <RocketLaunch onComplete={onRocketComplete} onCountdown={onCountdown} />
+        )}
 
-            {/* Earth in desktop window */}
-            {isFlight && (
-              <InteractiveEarth
-                position={isCommand ? [-2.8, 0.4, -9.0] : [0, 0, 0]}
+        {/* 3D Earth (visible from space flight / command center onward) */}
+        {(isFlight || isCommand || isVR) && (
+          <InteractiveEarth
+            position={isVR ? [0, 1.2, -4.5] : isCommand ? [-2.8, 0.4, -9.0] : [0, 0, 0]}
+          />
+        )}
+
+        {/* Orbital station */}
+        {(isStation || isVR) && (
+          <OrbitalStation position={[0, 0, -12]} />
+        )}
+
+        {/* Command center holographic elements & 360° station enclosure */}
+        {(isCommand || isVR) && (
+          <group position={[0, 0, 0]}>
+            <AirlockDoor isOpen={isCommand || isVR} />
+            <MaintenanceDrone position={[-2, 1.8, -2]} range={2} speed={0.5} />
+            <MaintenanceDrone position={[2, 2.2, -4]}  range={3} speed={0.7} />
+            <HolographicMap position={[-1.8, 0.5, -2.5]} />
+            <AIOrb position={[2.0, 0.3, -1.8]} />
+
+            <pointLight color="#00c8ff" intensity={2.5} distance={15} position={[0, 2.5, -2]} />
+            <pointLight color="#7b2ff7" intensity={1.8} distance={12} position={[-3, 2, -3]} />
+
+            {/* Floor platform in 360 degrees */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
+              <planeGeometry args={[24, 24]} />
+              <meshStandardMaterial
+                color="#06182a"
+                transparent
+                opacity={0.9}
+                metalness={0.7}
+                roughness={0.3}
               />
-            )}
+            </mesh>
+            <gridHelper args={[24, 24, 0x00c8ff, 0x003366]} position={[0, -1.49, 0]} />
 
-            {/* Orbital station */}
-            {isStation && (
-              <OrbitalStation position={[0, 0, -12]} />
-            )}
+            {/* Station interior side walls in 360 degrees */}
+            <mesh position={[-8, 0, -3]} rotation={[0, Math.PI / 2, 0]}>
+              <boxGeometry args={[12, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[8, 0, -3]} rotation={[0, -Math.PI / 2, 0]}>
+              <boxGeometry args={[12, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
 
-            {/* Desktop Command center holographic elements */}
-            {isCommand && (
-              <group position={[0, 0, 0]}>
-                <AirlockDoor isOpen={isCommand} />
-                <MaintenanceDrone position={[-2, 1.8, -2]} range={2} speed={0.5} />
-                <MaintenanceDrone position={[2, 2.2, -4]}  range={3} speed={0.7} />
-                <HolographicMap position={[-1.8, 0.5, -2.5]} />
-                <AIOrb position={[2.0, 0.3, -1.8]} />
+            {/* Back wall with panoramic window frame */}
+            <mesh position={[-6, 0, -6]}>
+              <boxGeometry args={[4, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[6, 0, -6]}>
+              <boxGeometry args={[4, 8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, 3.6, -6]}>
+              <boxGeometry args={[8, 0.8, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
+            <mesh position={[0, -2.0, -6]}>
+              <boxGeometry args={[8, 1.0, 0.1]} />
+              <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
+            </mesh>
 
-                <pointLight color="#00c8ff" intensity={2.5} distance={15} position={[0, 2.5, -2]} />
-                <pointLight color="#7b2ff7" intensity={1.8} distance={12} position={[-3, 2, -3]} />
-
-                {/* Floor */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]}>
-                  <planeGeometry args={[20, 20]} />
-                  <meshStandardMaterial
-                    color="#06182a"
-                    transparent
-                    opacity={0.9}
-                    metalness={0.7}
-                    roughness={0.3}
-                  />
-                </mesh>
-                <gridHelper args={[20, 20, 0x00c8ff, 0x003366]} position={[0, -1.49, 0]} />
-
-                {/* Side walls */}
-                <mesh position={[-8, 0, -3]} rotation={[0, Math.PI / 2, 0]}>
-                  <boxGeometry args={[8, 8, 0.1]} />
-                  <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
-                </mesh>
-                <mesh position={[8, 0, -3]} rotation={[0, -Math.PI / 2, 0]}>
-                  <boxGeometry args={[8, 8, 0.1]} />
-                  <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
-                </mesh>
-
-                {/* Back wall with opening for window */}
-                <mesh position={[-6, 0, -6]}>
-                  <boxGeometry args={[4, 8, 0.1]} />
-                  <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
-                </mesh>
-                <mesh position={[6, 0, -6]}>
-                  <boxGeometry args={[4, 8, 0.1]} />
-                  <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
-                </mesh>
-                <mesh position={[0, 3.6, -6]}>
-                  <boxGeometry args={[8, 0.8, 0.1]} />
-                  <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
-                </mesh>
-                <mesh position={[0, -2.0, -6]}>
-                  <boxGeometry args={[8, 1.0, 0.1]} />
-                  <meshStandardMaterial color="#142436" metalness={0.7} roughness={0.3} />
-                </mesh>
-
-                {/* Panoramic Window */}
-                <mesh position={[0, 0.8, -5.94]}>
-                  <planeGeometry args={[8, 4.8]} />
-                  <meshPhysicalMaterial
-                    color="#001830"
-                    transmission={0.92}
-                    thickness={0.2}
-                    roughness={0.05}
-                    transparent
-                    opacity={0.25}
-                  />
-                </mesh>
-
-                {/* Window frame border */}
-                <mesh position={[0, 0.8, -5.92]}>
-                  <ringGeometry args={[3.8, 4.2, 4]} />
-                  <meshStandardMaterial color="#3a4f66" metalness={0.85} roughness={0.2} />
-                </mesh>
-              </group>
-            )}
-
-            {/* Launch lighting */}
-            {isRocket && (
-              <spotLight position={[3, 6, 3]} angle={0.4} penumbra={0.5} intensity={2} color="#fff5e0" />
-            )}
-          </>
+            {/* Panoramic Glass Window */}
+            <mesh position={[0, 0.8, -5.94]}>
+              <planeGeometry args={[8, 4.8]} />
+              <meshPhysicalMaterial
+                color="#001830"
+                transmission={0.92}
+                thickness={0.2}
+                roughness={0.05}
+                transparent
+                opacity={0.25}
+              />
+            </mesh>
+            <mesh position={[0, 0.8, -5.92]}>
+              <ringGeometry args={[3.8, 4.2, 4]} />
+              <meshStandardMaterial color="#3a4f66" metalness={0.85} roughness={0.2} />
+            </mesh>
+          </group>
         )}
 
         {/* WebXR Session & 3D World-Space Navigation Dock */}
